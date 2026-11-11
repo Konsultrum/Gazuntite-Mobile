@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 currentState="labelState"
+		 focusOut="onfocusOut(event)"
+		 focusIn="onFocusIn(event)"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			[Bindable]
+			public var prompt:String = "";
+			
+			protected function onfocusOut(event:FocusEvent):void
+			{
+				this.currentState = "labelState"
+			}
+			
+			protected function onFocusIn(event:FocusEvent):void
+			{
+				this.currentState = "textInputState";
+			}
+			protected function onLabelClick(event:MouseEvent):void
+			{
+				currentState = 'textInputState';
+				uiText.setFocus();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="labelState"/>
+		<s:State name="textInputState"/>
+	</s:states>
+	<s:Label includeIn="labelState" width="100%" maxDisplayedLines="1" showTruncationTip="true"
+			 styleName="patientFormText"
+			 text="{prompt}"
+			 mouseDown="onLabelClick(event)"
+			 />
+	<s:TextInput id="uiText" includeIn="textInputState" width="100%"
+				text="@{prompt}"
+				focusOut="onfocusOut(event)"
+				styleName="patientFormText"
+				/>
+</s:Group>

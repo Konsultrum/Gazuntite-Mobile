@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+///////////////////////////////////////////////
+///    Author : Tahir Alvi					///
+///    Date   : 25 July, 2013				///
+///    Project: Gazuntite Online Clinic		///
+///////////////////////////////////////////////
+-->
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  xmlns:components="com.gazuntite.controls.extended.components.*" 
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.pmh.Allergy.AllergyDTO;
+			
+			[Bindable]	public var labelWidth:Number = 55;
+			[Bindable]	public var dto:AllergyDTO;
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:DateFormatter id="formatDateTime" formatString="MM/DD/YYYY" />
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="8" paddingRight="8" paddingTop="5" paddingBottom="8" gap="10"/>
+	</s:layout>
+	
+	<s:VGroup width="50%" gap="6">
+		<s:HGroup id="id_top" width="100%" verticalAlign="middle">
+			<s:BitmapImage id="id_icnOnsetGreen"
+						   width="{uiCheckImg.width}"
+						   source="@Embed('/assets/images/checkmark_green.png')"
+						   includeInLayout="{dto.isOnSetValid}"
+						   visible="{dto.isOnSetValid &amp;&amp; !dto.isNKDA}"
+						   />
+			<s:BitmapImage id="id_icnOnsetred"
+						   width="{uiCheckImg.width}" 
+						   scaleMode="letterbox" 
+						   source="@Embed('/assets/images/dot_red.png')"
+						   includeInLayout="{!dto.isOnSetValid}"
+						   visible="{!dto.isOnSetValid}"
+						   />
+			<s:Label text="OnSet:"	 styleName="patientFormLabel"/>
+			<s:Spacer width="10" />
+			<s:Label text="{dto.OnSet}" toolTip="{dto.OnSet}" maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue" />
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:BitmapImage id="uiCheckImg"
+						   source="@Embed('/assets/images/checkmark_green.png')"
+						   includeInLayout="{dto.isAllergyNameValid}"
+						   visible="{dto.isAllergyNameValid &amp;&amp; !dto.isNKDA}"
+						   />
+			<s:BitmapImage id="id_icnAllergyRed"
+						   width="{uiCheckImg.width}" 
+						   scaleMode="letterbox" source="@Embed('/assets/images/dot_red.png')"
+						   includeInLayout="{!dto.isAllergyNameValid}"
+						   visible="{!dto.isAllergyNameValid}"
+						   />
+			<s:Label text="Allergy:" width="{labelWidth}" styleName="patientFormLabel" />
+			<s:Label text="{dto.AllergyName}" toolTip="{dto.AllergyName}" styleName="patientFormValue" maxDisplayedLines="1" showTruncationTip="true"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:VGroup width="50%" gap="6">
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="Reaction:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{dto.Reaction}" toolTip="{dto.Reaction}" styleName="patientFormValue" maxDisplayedLines="1" showTruncationTip="true"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="Active:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{dto.isActive == 'true' ? 'Yes':'No'}" toolTip="{dto.isActive == 'true' ? 'Yes':'No'}" styleName="patientFormValue" maxDisplayedLines="1" showTruncationTip="true"/>
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+</s:SkinnableContainer>

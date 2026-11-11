@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				initialize="init()"
+				xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+				>
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.pmh.compHistory.FamilyHistoryDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.LoadFamilyHistoryByPatientIdEvent;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.ManagePatientFamilyHistoryEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]	public var dto:FamilyHistoryDTO;
+			[Bindable]	public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			[Bindable]	protected var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			protected function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data 					= value;
+				
+				if(value == null)
+					return;
+				
+				dto 						= value as FamilyHistoryDTO;
+				
+				
+				id_btnDictation.visible = ! dto.IsNA;
+				id_btnNote.visible = ! dto.IsNA;
+				id_btnDictation.includeInLayout = ! dto.IsNA;
+				id_btnNote.includeInLayout = ! dto.IsNA;
+				
+				
+				removeGlow();
+				
+				invalidateDisplayList();
+			}
+			
+			protected function toggleEditView():void
+			{				
+				if(dto.IsNA) return;
+				
+				dto.IsRecordEditable = !dto.IsRecordEditable;
+				
+				if(dto.IsRecordEditable)
+				{
+					applyGlow();
+					
+					if(gp.numChildren == 2)
+					{
+						if(gp.getElementAt(1) is FamilyListItemEditView)
+						{
+							gp.removeElementAt(1);
+							callLater(addItemEditView); 
+						}
+						return;
+					}
+					else
+						callLater(addItemEditView); 
+				}
+				else
+				{
+					removeGlow();
+				}
+			}
+			
+			private function applyGlow():void
+			{
+				glow1.alpha = 1;
+				glowAnimation.play();
+			}
+			public function removeGlow():void
+			{
+				glowAnimation.play(null, true);
+				glow1.alpha = 0;
+			}
+			
+			private function addItemEditView():void
+			{
+				var gev:FamilyListItemEditView 				= new  FamilyListItemEditView();
+				gev.familyHistoryDto = dto;
+				gev.percentWidth							= 100;
+				gev.setStyle('skinClass', NewRXExpandRendererSkin);
+							
+				gp.addElementAt(gev, 1);				
+				
+			}
+			
+			public function getDispLabel(dataModel:FamilyHistoryDTO):String
+			{
+				var result:String = "";
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if(dto.IsNA)
+				{
+					result = dto.SNo + ". " + dto.FamilyHistoryType.Name + "- None";
+				}
+				else 
+				{
+					result = dto.SNo + ". " + dto.FamilyHistoryType.Name + "- " + dto.DiseaseType.Name;
+				}
+				
+				return result;
+			}
+			
+			public function getDispTooltip(dataModel:FamilyHistoryDTO):String
+			{
+				var result:String = "";
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if(dto.IsNA)
+				{
+					result = dto.FamilyHistoryType.Name + "- None";
+				}
+				else 
+				{
+					result = dto.FamilyHistoryType.Name + "- " + dto.DiseaseType.Name
+				}
+				
+				return result;
+			}
+			
+			protected function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				toggleEditView();
+				event.stopPropagation();
+			}
+			
+			protected function delete_Record():void
+			{
+				UtilityFunctions.AskMessage("Do you want to delete selected record?", function():void
+				{
+					dto.IsDeleted = true;
+					dto.IsDirty = true;
+					dto.ModifiedAt = new Date();
+					dto.ModifiedBy = model.LoggedInUserId;
+					
+					if(null != model.FamilyHistoryList)
+						model.FamilyHistoryList.removeAll();
+					else
+						model.FamilyHistoryList = new ArrayCollection();
+					
+					model.FamilyHistoryList.addItem(dto);
+					
+					saveFamilyHistory();
+				});
+			}
+			
+			private function saveFamilyHistory():void
+			{
+				var familyHistoryRecord:FamilyHistoryDTO = new FamilyHistoryDTO();
+				if( null != model.FamilyHistoryList && model.FamilyHistoryList.length)
+				{
+					familyHistoryRecord = model.FamilyHistoryList.getItemAt(0) as FamilyHistoryDTO;
+				}
+				var evt:ManagePatientFamilyHistoryEvent = new ManagePatientFamilyHistoryEvent( model.patientDTO.ID, model.ClinicBranchIdSeq, familyHistoryRecord, clearFamilyHistory );
+				CairngormEventDispatcher.getInstance().dispatchEvent( evt );
+			}
+			private function clearFamilyHistory():void
+			{	
+				//update skins for icons....
+				dispatchEvent(new Event("clearNotesEvent",true, true ));
+				
+				//update controls
+				dispatchEvent( new Event("data_added", true, true) );
+				
+				loadFamilyHistory();
+			}
+			private function loadFamilyHistory():void
+			{
+				var ll:LoadFamilyHistoryByPatientIdEvent = new LoadFamilyHistoryByPatientIdEvent( );
+				CairngormEventDispatcher.getInstance().dispatchEvent( ll );
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number,  unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="35" >
+		
+		<s:HGroup left="0" right="76" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="8"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label text="{getDispLabel(dto)}" width="100%" toolTip="{getDispTooltip(dto)}"  color="#333333" fontFamily="CalibriCFF"	 fontSize="14"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image source="@Embed('assets/images/new.png')"/>
+			
+			<s:ToggleButton id="id_btnNote"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inNoteMode}"
+							buttonMode="true" toolTip="Record Level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+							includeInLayout="{id_btnNote.visible}"
+							/>
+			<s:ToggleButton id="id_btnDictation"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inDictationMode}"
+							buttonMode="true" toolTip="Record Level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+							includeInLayout="{id_btnDictation.visible}"
+							/>
+			<s:Button id="id_delete"
+					  click="delete_Record()"
+					  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin" 
+					  buttonMode="true" useHandCursor="true"
+					  toolTip="{'Delete ' + dto.FamilyHistoryType.Name + ' history' }"	  
+					  />
+		</s:HGroup>
+		
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="30"  visible="{dto.IsRecordEditable}" includeInLayout="{dto.IsRecordEditable}" >
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"  />
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" noteTooltip="{dto.FamilyHistoryNote}" note="@{dto.FamilyHistoryNote}"
+											 isSaveButtonVisible="false"/>
+	</s:Group>
+	
+	
+</s:ItemRenderer>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx"
+				xmlns:recommendation="com.gazuntite.view.patient.input.assessment.plan.recommendation.*" 
+				xmlns:components="com.gazuntite.components.*"
+				autoDrawBackground="false"
+				width="100%" 
+				initialize="init()" xmlns:dictation="com.gazuntite.components.dictation.*"
+				>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.recommendation.RecommendationDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.diagnosis.PatientInputAssessmentDiagnosisEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			[Bindable]	
+			public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			
+			[Bindable]
+			private var recommendationDTO:RecommendationDTO;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				recommendationDTO = data as RecommendationDTO;
+				
+				if (!recommendationDTO)
+					return;
+				
+				id_SerialLabel.text = recommendationDTO.serialNumber + ". ";
+				var serialLabel:String = "";
+				
+				if (recommendationDTO.Description.length > 0)
+				{
+					serialLabel += recommendationDTO.Description;
+				}
+				else if (recommendationDTO.plantype && recommendationDTO.plantype.ID != 0)
+				{
+					serialLabel += recommendationDTO.plantype.Name;
+				}
+				
+				id_SerialLabel.text += serialLabel;
+				id_SerialLabel.toolTip = serialLabel;
+				
+				setDictationNoteButtonMode();
+				
+				invalidateDisplayList();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function toggleEditView():void
+			{
+				data.inEditMode = !data.inEditMode;
+				
+				editModeView.visible = data.inEditMode;
+				editModeView.includeInLayout = data.inEditMode;
+				
+				if (!data.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!data.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+			
+			private function deleteClickHandler(event:MouseEvent):void
+			{
+				if (!recommendationDTO)
+					return;
+				
+				UtilityFunctions.AskMessage("Do you want to delete selected record", function():void
+				{
+					recommendationDTO.IsDirty = true;
+					recommendationDTO.IsDeleted = true;
+					
+					var ev:PatientInputAssessmentRecommendationEvent = new PatientInputAssessmentRecommendationEvent(
+						PatientInputAssessmentRecommendationEvent.PATIENT_INPUT_RECOMMENDATION_DELETE_EVENT, true);
+					
+					ev.recommedationDTO = recommendationDTO;
+					
+					dispatchEvent(ev);
+				});
+				
+				event.stopPropagation();
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!recommendationDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function showGlow():void
+			{
+				if (data.inEditMode)
+				{
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="35" buttonMode="true" toolTip="Open/Close Details"
+						  click="toggleEditView()">
+		<s:Label id="id_SerialLabel" left="5" right="110" color="#333333" 
+				 fontFamily="CalibriCFF" fontSize="14" maxDisplayedLines="1" verticalCenter="0"/>
+		
+		<s:Group right="76" top="10">
+			<s:Image source="@Embed('assets/images/new.png')"/>
+			<s:Image source="@Embed('assets/images/clockblue.png')" visible="false" includeInLayout="false"/>
+		</s:Group>
+		
+		<s:ToggleButton id="uiDictation" right="53" top="8"
+						selected="@{viewModel.inDictationMode}" buttonMode="true" toolTip="Record level Dictation"
+						skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+						click="onDictationNoteButtonsClick(event)"/>
+		
+		<s:ToggleButton id="uiNote" right="28" top="8"
+						selected="@{viewModel.inNoteMode}" buttonMode="true" toolTip="Record level Notes"
+						skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+						click="onDictationNoteButtonsClick(event)"/>
+		
+		<s:Button right="4" top="8"
+				  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin"
+				  buttonMode="true" useHandCursor="true" toolTip="Delete Recommendation"
+				  click="deleteClickHandler(event)"/>
+	</s:SkinnableContainer>
+	
+	<s:Group id="editModeView" width="{id_Header.width - 5}" top="30" visible="{recommendationDTO.inEditMode}" includeInLayout="{recommendationDTO.inEditMode}">
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingLeft="10" paddingRight="3" paddingTop="4" paddingBottom="3"/>
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}"
+											 note="@{recommendationDTO.Note}" noteTooltip="{recommendationDTO.Note}" isSaveButtonVisible="false"/>
+		<recommendation:RecommendationListItemEditView width="100%" recommendationDTO="{recommendationDTO}"/>
+	</s:Group>
+</s:ItemRenderer>

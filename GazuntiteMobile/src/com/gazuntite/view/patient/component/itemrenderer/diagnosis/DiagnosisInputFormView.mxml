@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:components="com.gazuntite.controls.extended.components.*" 
+		 xmlns:diagnosis="com.gazuntite.view.patient.input.assessment.diagnosis.*"
+		 xmlns:components1="com.gazuntite.components.*" 
+		 xmlns:dictation="com.gazuntite.components.dictation.*"
+		 creationComplete="cc()" xmlns:diagnosis1="com.gazuntite.view.patient.component.itemrenderer.diagnosis.*" 
+		 >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.diagnosis.DiagnosisDTO;
+			import com.gazuntite.common.dto.assessment.diagnosis.ICDCodeDTO;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.diagnosis.PatientInputAssessmentDiagnosisEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.controls.ComboBase;
+			import mx.core.FlexGlobals;
+			import mx.events.IndexChangedEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]	
+			public var labelWidth:Number = 110;
+			
+			[Bindable]	
+			private var arrAssociateTypes:ArrayCollection = new ArrayCollection(['This Visit', 'Previous Visit', 'N/A']);
+			
+			private var _dictationNoteViewModel:PatientDictationNoteViewModel;
+			
+			[Bindable]
+			public function get dictationNoteViewModel():PatientDictationNoteViewModel
+			{
+				return _dictationNoteViewModel;
+			}
+			
+			public function set dictationNoteViewModel(value:PatientDictationNoteViewModel):void
+			{
+				_dictationNoteViewModel = value;
+			}
+			
+			private function cc():void
+			{
+				addEventListener(ImportChronicDiagnosisView.IMPORT_CHRONIC_DAGNOSIS_IMPORT_EVENT, importChronicDiagnosisImportHandler, false, 0, true);
+				addEventListener(ImportChronicDiagnosisView.IMPORT_CHRONIC_DIAGNOSIS_CANCEL_EVENT, importChronicDiagnosisCancelHandler, false, 0, true);
+			}
+			
+			private function importChronicDiagnosisImportHandler(event:Event):void
+			{
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (isAssociatedVisitTypeInvalid())
+					return;
+				
+				showImportChronicDiagnosisView(false);
+				
+				if (!model.diagnosisDTOChronicHistoryList)
+					return;
+				
+				if (model.diagnosisDTOChronicHistoryList.length < 1)
+					return;
+				
+				if (model.diagnosisDTOList)
+					model.diagnosisDTOList = new ArrayCollection();
+				
+				
+				for (var i:int = 0; i < model.diagnosisDTOChronicHistoryList.length; i++)
+				{
+					var diagnosisDTO:DiagnosisDTO = model.diagnosisDTOChronicHistoryList[i] as DiagnosisDTO;
+					
+					if (diagnosisDTO && diagnosisDTO.isSelected)
+					{
+						setDiagnosisProperties(diagnosisDTO);
+						
+						model.diagnosisDTOList.addItem(diagnosisDTO);
+					}
+				}
+				
+				var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+					PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_EDIT_EVENT, true);
+				
+				dispatchEvent(ev);
+			}
+			
+			private function importChronicDiagnosisCancelHandler(event:Event):void
+			{
+				showImportChronicDiagnosisView(false);
+			}
+			
+			private function importChronicDiagnosisClickHandler():void
+			{
+				showImportChronicDiagnosisView(!id_ImportChronicDiagnosisView.visible);
+			}
+			
+			private function showImportChronicDiagnosisView(doShow:Boolean):void
+			{
+				id_ImportChronicDiagnosisView.visible = doShow;
+				id_ImportChronicDiagnosisView.includeInLayout = doShow;
+			}
+			
+			private function associatedVisitsCmboChangeHandler():void
+			{
+				if (id_AssociateVisitsCmbo.selectedIndex == 1)
+				{
+					id_VisitDatesView.visible = true;
+				}
+				else
+				{
+					id_VisitDatesView.visible = false;
+				}
+			}
+			
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.DOWN || event.keyCode == Keyboard.UP)
+					return;
+				
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+					PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				
+				dispatchEvent(ev);
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar.id == "id_IcdCodeCmbo")
+				{
+					id_DiagnosisCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				else
+				{
+					id_IcdCodeCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				
+				if (curTar.selectedIndex < 0)
+				{
+					id_IcdCodeCmbo.textInput.text = "";
+					id_DiagnosisCmbo.textInput.text = "";
+				}
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				var diagnosisDTO:DiagnosisDTO = new DiagnosisDTO();
+				
+				diagnosisDTO.IcdDto = id_IcdCodeCmbo.selectedItem as ICDCodeDTO;
+				diagnosisDTO.OnSet = id_OnSet.text;
+				diagnosisDTO.IsChronic = id_Chronic.selected;
+				
+				setDiagnosisProperties(diagnosisDTO);
+				
+				var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+					PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_ADD_EVENT, true);
+				
+				ev.diagnosisDTO = diagnosisDTO;
+				
+				dispatchEvent(ev);
+				
+				clearForm();
+			}
+			
+			private function setDiagnosisProperties(diagnosisDTO:DiagnosisDTO):void
+			{
+				if (!diagnosisDTO)
+					return;
+				
+				if (id_AssociateVisitsCmbo.selectedIndex == 0)
+				{
+					diagnosisDTO.VisitID = model.VisitID;
+					diagnosisDTO.VisitDate = model.VisitDate;
+				}
+					
+				else if (id_AssociateVisitsCmbo.selectedIndex == 1)
+				{
+					diagnosisDTO.VisitID = id_VisitDatesCombo.selectedItem.VisitID;
+					diagnosisDTO.VisitDate = UtilityFunctions.toDate(id_VisitDatesCombo.selectedItem.VisitDate);
+				}
+					
+				else if (id_AssociateVisitsCmbo.selectedIndex == 2)
+				{
+					diagnosisDTO.IsNA = true;
+				}
+				
+				diagnosisDTO.CreatedAt = new Date();
+				diagnosisDTO.CreatedBy = model.LoggedInUserId;
+				
+				diagnosisDTO.ModifiedAt = new Date();
+				diagnosisDTO.ModifiedBy = model.LoggedInUserId;
+				
+				diagnosisDTO.PatientID = model.patientDTO.ID;
+				
+				diagnosisDTO.IsRecordEditable = true;
+				diagnosisDTO.IsDirty = true;
+				
+				diagnosisDTO.Note = dictationNoteView.note;
+				diagnosisDTO.NoteSubject = "";
+				diagnosisDTO.DictationID = QIConstants.GUID_FORMAT;
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_AssociateVisitsCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Associated Visit Type\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_AssociateVisitsCmbo;
+				}
+				else if (id_AssociateVisitsCmbo.selectedIndex == 1 && id_VisitDatesCombo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Associated Visit\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_VisitDatesCombo;
+				}
+				
+				if (id_OnSet.text.length < 1)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select OnSet Date\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_OnSet;
+				}
+				
+				if (id_IcdCodeCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select ICD Code\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_IcdCodeCmbo;
+				}
+				
+				if (id_DiagnosisCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Diagnosis\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_DiagnosisCmbo;
+				}
+				
+				if (errorStr.length > 0)
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				
+				return isNotValid;
+			}
+			
+			private function isAssociatedVisitTypeInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_AssociateVisitsCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Associated Visit Type\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_AssociateVisitsCmbo;
+				}
+				else if (id_AssociateVisitsCmbo.selectedIndex == 1 && id_VisitDatesCombo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Associated Visit\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_VisitDatesCombo;
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				}
+				
+				return isNotValid;
+			}
+			
+			private function clearForm():void
+			{
+				id_AssociateVisitsCmbo.selectedIndex = -1;
+				id_AssociateVisitsCmbo.textInput.text = "";
+				
+				id_VisitDatesCombo.selectedIndex = -1;
+				id_VisitDatesCombo.textInput.text = "";
+				
+				id_OnSet.selectedDate = null;
+				
+				id_IcdCodeCmbo.selectedIndex = -1;
+				id_IcdCodeCmbo.textInput.text = "";
+				
+				id_DiagnosisCmbo.selectedIndex = -1;
+				id_DiagnosisCmbo.textInput.text = "";
+				
+				id_Chronic.selected = false;
+				
+				dictationNoteView.note = "";
+				
+				dictationNoteViewModel.inDictationMode = false;
+				dictationNoteViewModel.inNoteMode = false;
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"/>
+	</s:layout>
+	
+		<s:HGroup width="100%" gap="15">
+			
+			<s:HGroup width="50%">
+				<s:HGroup width="100%" height="21" verticalAlign="middle">
+					<s:BitmapImage id="img_Associated" source="{id_AssociateVisitsCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+					<s:ComboBox id="id_AssociateVisitsCmbo" width="100%" dataProvider="{arrAssociateTypes}" 
+								prompt="Select Associated Visit" toolTip="Associated Visits"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								change="associatedVisitsCmboChangeHandler()"/>
+					
+				</s:HGroup>
+			</s:HGroup>
+			
+			<s:HGroup width="50%" horizontalAlign="right">
+				<s:HGroup id="id_VisitDatesView" width="100%" height="21" verticalAlign="middle" 
+						  visible="false" includeInLayout="{id_VisitDatesView.visible}">
+					<s:BitmapImage id="img_preVisits" source="{id_VisitDatesCombo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+					<s:ComboBox id="id_VisitDatesCombo" width="100%" prompt="Select Previous Visits" toolTip="Previous Visits"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" 
+								labelField="VisitDateLbl" dataProvider="{model.unSignedVisitDates}"/>
+				</s:HGroup>
+				
+				<s:Button id="id_ImportChronicDiagnosis"  
+						  buttonMode="true" useHandCursor="true"
+						  skinClass="com.gazuntite.skins.controls.button.input.ImportButtonSkin"
+						  toolTip="Import Chronic Diagnosis"
+						  enabled="{(model.diagnosisDTOChronicHistoryList.length > 0)}"
+						  click="importChronicDiagnosisClickHandler()"/>
+			</s:HGroup>
+		</s:HGroup>
+		
+		<diagnosis1:ImportChronicDiagnosisView id="id_ImportChronicDiagnosisView" width="100%" visible="false" includeInLayout="false"/>
+		
+		<s:HGroup width="100%" gap="16">
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:BitmapImage id="img_OnSet" source="{id_OnSet.selectedDate != null ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="OnSet:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<components:LabelDateField id="id_OnSet" width="100%" height="20" prompt="OnSet" toolTip="OnSet" 
+										   yearNavigationEnabled="true" IsEditAllow="false" editable="false" maxYear="{new Date().getFullYear()}" minYear="1901"
+										   selectableRange="{{rangeEnd : new Date()}}"
+										   layoutDirection="rtl"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:BitmapImage id="img_IcdCode" source="{id_IcdCodeCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="ICD Code:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_IcdCodeCmbo" width="100%" prompt="Select ICD Code" toolTip="ICD Code"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+							dataProvider="{model.icdCodeDTOList}" labelField="IcdCodeName"
+							keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+			</s:HGroup>
+		</s:HGroup>
+		
+		
+		<s:HGroup width="100%" gap="16">
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:Spacer width="11"/>
+				<s:Label text="Chronic:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ToggleButton id="id_Chronic" buttonMode="true"
+								skinClass="com.gazuntite.view.patient.component.YesNoToggleButtonSkin"
+								toolTip="{id_Chronic.selected ? 'Yes' : 'No'}"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:BitmapImage id="img_Diagnosis" source="{id_DiagnosisCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Diagnosis:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_DiagnosisCmbo" width="100%" prompt="Select Diagnosis" toolTip="Diagnosis"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+							dataProvider="{model.icdCodeDTOList}" labelField="IcdCodeDescription"
+							keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+			</s:HGroup>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="100%" verticalAlign="bottom" horizontalAlign="right">
+			<s:ToggleButton 
+				id="dictation" depth="3"
+				buttonMode="true" toolTip="Dictation"
+				skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+				selected="@{dictationNoteViewModel.inDictationMode}"/>
+			<s:ToggleButton 
+				id="note" depth="3"
+				buttonMode="true" toolTip="Note"
+				skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+				selected="@{dictationNoteViewModel.inNoteMode}"/>
+			
+			<s:Button id="save" buttonMode="true" toolTip="Save"
+					  click="saveClickHandler()"
+					  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"/>
+			<s:Button id="next" buttonMode="true" toolTip="Next" 
+					  skinClass="com.gazuntite.skins.controls.button.NextButtonSkin"/>
+		</s:HGroup>
+		
+		<dictation:PatientDictationNoteView id="dictationNoteView" width="100%" viewModel="{dictationNoteViewModel}" isSaveButtonVisible="false"/>
+	
+</s:Group>

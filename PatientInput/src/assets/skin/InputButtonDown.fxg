@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Graphic xmlns:ATE="http://ns.adobe.com/ate/2009" xmlns:ai="http://ns.adobe.com/ai/2009" xmlns:fc="http://ns.adobe.com/flashcatalyst/2009" xmlns:d="http://ns.adobe.com/fxg/2008/dt" xmlns="http://ns.adobe.com/fxg/2008" xmlns:flm="http://ns.adobe.com/flame/2008" version="2.0">
+	<Path data="M 5.804 0 L 40.628 0 C 42.231 0 43.531 1.299 43.531 2.902 L 46.433 17.138 C 46.433 18.74 45.134 20.04 43.531 20.04 L 2.902 20.04 C 1.299 20.04 0 18.74 0 17.138 L 2.902 2.902 C 2.902 1.299 4.201 0 5.804 0 Z"
+			>
+		<fill>
+			<LinearGradient rotation="90">
+				<GradientEntry alpha="1.0" color="#913E4D" ratio="0"/>
+				<GradientEntry alpha="1.0" color="#76333F" ratio="0.5019607843137255"/>
+				<GradientEntry alpha="1.0" color="#662C36" ratio="0.5058823529411764"/>
+				<GradientEntry alpha="1.0" color="#672C37" ratio="1"/>
+			</LinearGradient>
+		</fill>
+		<filters>
+			<DropShadowFilter alpha="0.75" angle="90" blurX="2" blurY="2" color="#000000"
+								distance="1" hideObject="false" inner="false" knockout="false"
+								quality="3" strength="1"/>
+		</filters>
+	</Path>
+</Graphic>

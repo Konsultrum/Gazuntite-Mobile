@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  xmlns:components="com.gazuntite.controls.extended.components.*"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.assessment.diagnosis.ICDCodeDTO;
+			import com.gazuntite.common.dto.pmh.compHistory.MedicalHistoryDTO;
+			import com.gazuntite.common.event.visit.LoadDiagnosisICDCodeEvent;
+			import com.gazuntite.common.util.ValidationUtils;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.LoadMedicalHistoryByPatientIdEvent;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.SaveMedicalHistoryEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.history.comprehensive.PatientInputHistoryComprehensiveViewModel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.ToolTipEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]	protected var model:QIModelLocator = QIModelLocator.getInstance();
+			[Bindable]	protected var viewModel:PatientInputHistoryComprehensiveViewModel = PatientInputHistoryComprehensiveViewModel.getInstance();
+			
+			[Bindable]	public var labelWidth:Number = 70;
+			[Bindable]	public var medicalHistoryDto:MedicalHistoryDTO;
+			
+			[Bindable]
+			public var availableIcdCodeList:ArrayCollection = viewModel.availableGeneralIcdCodeList;
+			
+			private function icdCodeChangeHandler():void
+			{
+				var selectedIcdCodeDTO:ICDCodeDTO;
+				var serachTerm:String = id_ICDCode.textInput.text;
+				//if value exceeds 3 characters then search Icd Code and map the Icd Code.
+				if(serachTerm.length >=3)
+				{
+					selectedIcdCodeDTO = null;
+					var icdEvent : LoadDiagnosisICDCodeEvent = new LoadDiagnosisICDCodeEvent(serachTerm,model.LoggedInUserSessionID,model.LoggedInUserId, ICDCodeloadResult);
+					icdEvent.icdCodeListToFill = this.availableIcdCodeList;
+					CairngormEventDispatcher.getInstance().dispatchEvent( icdEvent );
+				}
+				else
+				{
+					id_Description.textInput.text = '';
+					id_Description.selectedIndex = -1;
+					selectedIcdCodeDTO = null;
+				} 
+			}
+			
+			private function ICDCodeloadResult(icdCodeList:ArrayCollection):void
+			{
+				model.icdCodeDTOList = icdCodeList;
+			}
+			
+			protected function id_ICDCode_changeHandler(event:IndexChangeEvent):void
+			{
+				return;
+				if( id_ICDCode.selectedItem )
+				{
+					var item:ICDCodeDTO 		= id_ICDCode.selectedItem;
+					id_Description.selectedItem = item;
+					//					selectedIcdCodeDTO 			= item;
+					uiIsActive.selected = item.IsActive;
+					
+					dispatchEvent( new Event("ICD_Change", true, true ) );
+				}
+				else
+				{
+					Alert.show("please select ICD from list. for custom ICD add custom discription","invalid input");
+				} 
+			}
+			private function icdDescriptionChangeHandler():void
+			{
+				var serachTerm:String = id_Description.textInput.text;
+				//if value exceeds 3 characters then search Icd Code and map the Icd Code.
+				if(serachTerm.length >=3)
+				{
+					//					selectedIcdCodeDTO = null;
+					var icdEvent : LoadDiagnosisICDCodeEvent = new LoadDiagnosisICDCodeEvent(serachTerm,model.LoggedInUserSessionID,model.LoggedInUserId, ICDCodeloadResult);
+					CairngormEventDispatcher.getInstance().dispatchEvent( icdEvent );
+				}
+				else
+				{
+					id_ICDCode.textInput.text = '';
+					id_ICDCode.selectedIndex = -1;
+					//					selectedIcdCodeDTO = null;
+				}
+				//				id_add.enabled 		= isGetEdited();
+			}
+			protected function id_Description_changeHandler(event:IndexChangeEvent):void
+			{
+				if( id_Description.textInput.text.length > 3 )
+				{
+					var item:ICDCodeDTO;
+					if( id_Description.selectedIndex >= 0 )
+					{
+						item = id_Description.selectedItem;
+						id_ICDCode.selectedItem 	= item;
+					}
+					else 
+					{
+						item = new ICDCodeDTO();
+						item.IcdCodeDescription = id_Description.textInput.text;
+					}
+					
+					//					selectedIcdCodeDTO 			= item;
+					dispatchEvent( new Event("ICD_Change", true, true ) );
+				} 
+			}
+			protected function handleSave(event:MouseEvent):void
+			{				
+				saveForm();				
+			}
+			
+			private function saveForm():void
+			{
+				if(UtilityFunctions.IsNullOrEmpty(id_Description.textInput.text))
+				{				
+					Alert.show("Please select ICD Code or enter ICD description.","Required field", 
+						Alert.OK, FlexGlobals.topLevelApplication.mainContainer, 
+						function( event:CloseEvent):void
+						{
+							if( event.detail == Alert.OK )
+							{
+								id_ICDCode.setFocus();
+							}
+						});
+					return;		
+				}
+				
+				medicalHistoryDto.ICDDTO = id_ICDCode.selectedItem as ICDCodeDTO;
+				if(medicalHistoryDto.ICDDTO == null)
+				{
+					medicalHistoryDto.ICDDTO = new ICDCodeDTO();
+					medicalHistoryDto.ICDDTO.IcdCodeDescription = id_Description.textInput.text;
+				}
+				
+				if(id_Onset.selectedDate)
+				{
+					medicalHistoryDto.OnSet  = UtilityFunctions.FormatDate(id_Onset.selectedDate);
+				}
+				
+				medicalHistoryDto.isActive = uiIsActive.selected;
+				
+				//if(id_TextArea)
+				//	medicalHistoryDto.Note   = id_TextArea.text;
+				
+				medicalHistoryDto.ModifiedBy = model.LoggedInUserId;
+				medicalHistoryDto.ModifiedAt = new Date();				
+				medicalHistoryDto.isActive = uiIsActive.selected;
+				
+				if(null != model.GeneralHistoryList)
+					model.GeneralHistoryList.removeAll();
+				else
+					model.GeneralHistoryList = new ArrayCollection();
+				
+				model.GeneralHistoryList.addItem(medicalHistoryDto);	
+				
+				saveGeneralHistory();
+			}
+			
+			private function saveGeneralHistory():void
+			{
+				var medicalHistoryRecord:MedicalHistoryDTO = new MedicalHistoryDTO();
+				if( null != model.GeneralHistoryList && model.GeneralHistoryList.length)
+				{
+					medicalHistoryRecord = model.GeneralHistoryList.getItemAt(0) as MedicalHistoryDTO;
+				}
+				var evt:SaveMedicalHistoryEvent = new SaveMedicalHistoryEvent( model.patientDTO.ID, model.ClinicBranchIdSeq, medicalHistoryRecord, clearGeneralHistory );
+				CairngormEventDispatcher.getInstance().dispatchEvent( evt );
+			}
+			private function clearGeneralHistory():void
+			{
+				//update skins for icons....
+				dispatchEvent(new Event("clearNotesEvent",true, true ));
+				
+				//update controls
+				dispatchEvent( new Event("data_added", true, true) );			
+				
+				loadMedicalHistory();
+			}
+			private function loadMedicalHistory():void
+			{
+				var loadMedicalHistoryByPatientIdEvent:LoadMedicalHistoryByPatientIdEvent = new LoadMedicalHistoryByPatientIdEvent();
+				CairngormEventDispatcher.getInstance().dispatchEvent( loadMedicalHistoryByPatientIdEvent );
+			}
+			
+			[Bindable]
+			public var lableWidth:Number = 70;
+			
+			protected function id_Onset_toolTipShowHandler(event:ToolTipEvent):void
+			{
+				id_Onset.toolTip = id_Onset.value  || ValidationUtils.isValidDateString(id_Onset.text) ? id_Onset.text : 'OnSet';
+			}
+		]]>
+	</fx:Script>
+	
+			
+	<fx:Declarations>
+		<mx:DateFormatter id="formatDateTime" formatString="MM/DD/YYYY" />
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="8" paddingRight="8" paddingTop="5" paddingBottom="8"/>
+	</s:layout>
+	
+	<s:VGroup width="50%" gap="2">	
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label text="Category:" width="{labelWidth}"
+					 styleName="patientFormLabel"
+					 />
+			<s:Label text="{medicalHistoryDto.medicalhistorytype.Name}" width="{labelWidth}"
+					 styleName="patientFormLabel"
+					 />
+		</s:HGroup>
+		<s:HGroup width="100%" verticalAlign="middle">
+			
+			<s:Label text="ICD Code:" width="{lableWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_ICDCode" prompt="ICD Code" width="225" 
+									  dataProvider="{availableIcdCodeList}"
+									  selectedItem="@{medicalHistoryDto.ICDDTO}"
+									  keyUp="icdCodeChangeHandler()" 
+									  labelField="IcdCodeName"
+									  change="id_ICDCode_changeHandler(event)" useHandCursor="true" buttonMode="true"
+									  toolTip="{id_ICDCode.selectedItem ? id_ICDCode.selectedItem.IcdCodeName : 'ICD Code'}"
+									  skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" 
+									  />
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">
+			<s:Label text="ICD Desc:" width="{lableWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_Description" prompt="ICD Description" width="225" 
+									  dataProvider="{availableIcdCodeList}"
+									  selectedItem="@{medicalHistoryDto.ICDDTO}"
+									  keyUp="icdDescriptionChangeHandler()" 
+									  change="id_Description_changeHandler(event)" 
+									  toolTip="{id_Description.selectedItem ? id_Description.selectedItem.IcdCodeDescription : 'Description'}"
+									  useHandCursor="true" buttonMode="true" 
+									  labelField="IcdCodeDescription"
+									  skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"  
+									  />
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle">			
+			<s:Label text="Active:" width="{labelWidth}"
+					 styleName="patientFormLabel"/>
+			<s:Spacer width="2"/>
+			<s:ToggleButton
+				id="uiIsActive" toolTip="{uiIsActive.selected ? 'Yes' : 'No'}"
+				skinClass="com.gazuntite.view.patient.component.YesNoToggleButtonSkin"/>		
+			
+			<s:Rect width="10" visible="false" includeInLayout="false" />
+			<s:BitmapImage id="id_icnOnsetGreen"						   
+						   source="@Embed('/assets/images/checkmark_green.png')"
+						   includeInLayout="true"
+						   visible="true"
+						   />
+			<s:BitmapImage id="id_icnOnsetred"
+						   width="{id_icnOnsetGreen.width}" 
+						   scaleMode="letterbox" 
+						   source="@Embed('/assets/images/dot_red.png')"
+						   includeInLayout="false"
+						   visible="false"
+						   />
+			<s:Label text="OnSet:"
+					 styleName="patientFormLabel"/>
+			<s:Spacer width="10" />
+			<components:LabelDateField id="id_Onset" 
+									   width="150" toolTipStart="id_Onset_toolTipShowHandler(event)"									  
+									   yearNavigationEnabled="true"  maxYear="{new Date().getFullYear()}" minYear="1901"
+									   selectableRange="{{rangeEnd : new Date()}}" 
+									   IsEditAllow="false" editable="false"	
+									   layoutDirection="rtl"
+									   />
+			
+			
+		</s:HGroup>
+		
+	</s:VGroup>
+	
+	<s:HGroup height="100%" width="100%" verticalAlign="bottom" horizontalAlign="right">
+		<s:Button buttonMode="true"
+				  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin" 
+				  toolTip="Save"
+				  click="handleSave(event)"
+				  />		
+	</s:HGroup>
+</s:SkinnableContainer>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				height="28" width="140"
+				useHandCursor="true" buttonMode="true"
+				>
+	<fx:Script>
+		<![CDATA[
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+			}
+		]]>
+	</fx:Script>
+
+	
+
+	<s:RichText left="8" right="36" verticalCenter="0" color="#1C1C1C" fontFamily="Calibri"
+				fontSize="12" 
+				maxDisplayedLines="1" showTruncationTip="true"
+				text="{data.label}"/>	
+
+		
+	<s:ToggleButton 
+		right="24" verticalCenter="0"
+		skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+		useHandCursor="true" buttonMode="true" toolTip="Normal" />
+	<s:ToggleButton 
+		right="4" verticalCenter="0"
+		skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.ATB1"
+		useHandCursor="true" buttonMode="true" toolTip="Abnormal"/>
+
+	<!--	<s:BitmapImage right="2" verticalCenter="-8" smooth="true" 
+				   source="@Embed('/assets/images/Dot.png')"
+				   />
+-->
+</s:ItemRenderer>

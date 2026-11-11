@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:component="com.gazuntite.view.patient.component.*" xmlns:comprehensive="com.gazuntite.view.patient.input.history.comprehensive.*" xmlns:general="com.gazuntite.view.patient.input.history.comprehensive.general.*" xmlns:general1="com.gazuntite.input.comprehensive.view.general.*" xmlns:component1="com.gazuntite.common.view.component.*">
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.temp.model.TempDataModel;
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout
+			paddingLeft="2" paddingRight="2" paddingTop="2" paddingBottom="2"
+			gap="0"/>
+	</s:layout>
+	
+	<s:Scroller width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="auto" 
+				>
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0"/>
+			</s:layout>
+			
+			<general1:GeneralItemEditView width="100%"/>
+			
+			<component1:SortBar id="uiSortBar" width="100%" 
+							   dataProvider="{TempDataModel.getInstance().sortSourceComprehensive}"
+							   />
+			
+			<s:List id="uiInboxList"
+					width="100%" allowMultipleSelection="false" minHeight="50"
+					dataProvider="{TempDataModel.getInstance().comprehensiveItemList}"
+					itemRenderer="com.gazuntite.input.comprehensive.view.general.GeneralItemRenderder"
+					borderVisible="true" alternatingItemColors="[0xEEEEEE, 0xDFDFDF]"
+					/>
+		</s:Group>
+	</s:Scroller>
+</s:Group>

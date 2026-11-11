@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  styleName="inputViewSkin" 
+					  xmlns:supportclass="com.gazuntite.view.patient.supportclass.*" 
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:components="com.gazuntite.components.*" 
+					  xmlns:Immunization="com.gazuntite.view.patient.input.history.Immunization.*"
+					  xmlns:allergy="com.gazuntite.view.patient.input.history.allergy.*" 
+					  xmlns:immunization="com.gazuntite.view.patient.component.itemrenderer.immunization.*"
+					  xmlns:dictation="com.gazuntite.components.dictation.*"
+					  creationComplete="cc()" xmlns:component1="com.gazuntite.common.view.component.*" 
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.ModuleNoteDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.temp.model.TempDataModel;
+			import com.gazuntite.view.patient.viewmodel.PatientInputViewModel;
+			
+			[Bindable]	public var model:QIModelLocator 				= QIModelLocator.getInstance();
+			[Bindable]	private var modelInput:PatientInputViewModel 	= PatientInputViewModel.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputHistoryImmunizationViewModel = PatientInputHistoryImmunizationViewModel.getInstance();
+			
+			[Bindable]
+			private var notesDTO:ModuleNoteDTO;
+			
+			//-------- Creation Complete --------------
+			protected function cc():void
+			{
+				addEventListener(PatientInputHistoryImmunizationEvent.PATIENT_INPUT_IMMUNIZATION_DELETE_EVENT, managePatientImmunizationHandler, false, 0, true);
+				addEventListener(PatientInputHistoryImmunizationEvent.PATIENT_INPUT_IMMUNIZATION_EDIT_EVENT, managePatientImmunizationHandler, false, 0, true);
+				addEventListener(PatientInputHistoryImmunizationEvent.PATIENT_INPUT_IMMUNIZATION_ADD_EVENT, immunizationAddHandler, false, 0, true);
+				
+				addEventListener(PatientDictationNoteViewEvent.PATIENT_DICTATION_NOTE_SAVE_EVENT, patientDictationNoteSaveHandler, false, 0, true);
+			}
+			
+			private function immunizationAddHandler(event:PatientInputHistoryImmunizationEvent):void
+			{
+				if (!event.immunizationDTO)
+					return;
+				
+				if (!model.immunizationDTOList)
+					model.immunizationDTOList = new ArrayCollection();
+				
+				model.immunizationDTOList.addItem(event.immunizationDTO);
+				
+				event.immunizationDTO.serialNumber = model.immunizationDTOList.length;
+				
+				viewModel.managePatientImmunization();
+			}
+			
+			private function managePatientImmunizationHandler(event:PatientInputHistoryImmunizationEvent):void
+			{
+				viewModel.managePatientImmunization();
+			}
+			
+			private function patientDictationNoteSaveHandler(event:PatientDictationNoteViewEvent):void
+			{
+				event.moduleName = Constants.IMMUNIZATION_MODULE_NAME;
+				event.data = notesDTO;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout
+			gap="0" paddingTop="1" paddingBottom="10"
+			/>
+	</s:layout>
+	<component:PatientSubViewTitleBar width="100%" label="IMMUNIZATION" maxSectionCounter="4"  sectionNumber="4" showInputPart="true"
+									  MainSectionLabel="History"
+									  dictationNoteViewModel="{viewModel.dictationNoteViewModel}"
+									  visible="false" includeInLayout="false"
+									  />
+	<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel.dictationNoteViewModel}"
+										 isSectionLevel="true" note="@{notesDTO.Note}"/>
+	
+	<s:Scroller width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="auto" skinClass="com.gazuntite.skins.controls.list.InvisibleScrollerSkin" >
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0" />
+			</s:layout>
+			
+			<immunization:ImmunizationInputFormView width="100%" />
+			
+			<component1:SortBar id="uiSortBar" width="100%" 
+							   dataProvider="{TempDataModel.getInstance().sortSourceAllergy}"
+							   />
+			<s:SkinnableContainer width="100%" height="27" skinClass="com.gazuntite.skins.PatientSortBarSkin"
+								  visible="false" includeInLayout="false"
+								  >
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="10" gap="8"/>
+				</s:layout>
+				<s:Label text="Arrange By:" styleName="emailInboxToolbarTitle" />
+				<s:DropDownList id="uiSortDropDown"  skinClass="com.gazuntite.skins.controls.list.PatientSortBarDropListSkin" 
+								 selectedIndex="0"
+								 buttonMode="true" 
+								 toolTip="{uiSortDropDown.selectedItem.label}"
+								 >
+					<s:dataProvider>
+						<s:ArrayCollection>
+							<fx:Object label="Recently Added" />
+							<fx:Object label="Immunization Name" />
+						</s:ArrayCollection>
+					</s:dataProvider>
+				</s:DropDownList>
+				<s:Spacer width="100%" />
+			</s:SkinnableContainer>
+			
+			<s:List id="uiInboxList"
+					width="100%"
+					minHeight="50"
+					allowMultipleSelection="true"
+					skinClass="com.gazuntite.skins.controls.list.PatientInputListSkin"
+					borderVisible="false"
+					dataProvider="{model.immunizationDTOList}"
+					itemRenderer="com.gazuntite.view.patient.component.itemrenderer.immunization.ImmunInputListItemRenderer"/>
+			
+		</s:Group>
+	</s:Scroller>
+</s:SkinnableContainer>

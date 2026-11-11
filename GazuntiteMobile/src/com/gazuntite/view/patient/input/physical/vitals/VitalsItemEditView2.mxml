@@ -1,0 +1,592 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:newrx="com.gazuntite.provider.eprescription.services.patient.view.views.newrx.*" 
+		 xmlns:vitals="com.gazuntite.view.patient.input.physical.vitals.*" 
+		 xmlns:component="com.gazuntite.view.patient.component.*"
+		 creationComplete="CC(event)" xmlns:components="com.gazuntite.components.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.VitalsDTO;
+			import com.gazuntite.common.event.ManagePatientVitalEvent;
+			import com.gazuntite.common.util.converter.UnitConverter;
+			import com.gazuntite.patient.visit.event.physical.vitals.LoadPatientPreviousVitalsEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]
+			private var model :QIModelLocator = QIModelLocator.getInstance();
+			
+			public var vitalsDTO:VitalsDTO = null;
+			
+			[Bindable]
+			public var inItemRenderer:Boolean = false;
+			
+			[Bindable]
+			public var BMI:Number = 0;
+			
+			public var isMetric:Boolean = false;
+			
+			public function setCalculationAndConversions(isMetric:Boolean):void
+			{
+				this.isMetric = isMetric;
+				
+				var bh:Number = 0;
+				var bw:Number = 0;
+				var bt:Number = 0;
+				
+				if(isMetric)
+				{
+					id_height.label = "Height (Cm)";
+					id_weight.label = "Weight (Kg)";
+					id_temp.label   = "Temp (C)";	
+					
+					id_height.Unit = " Inch";
+					id_weight.Unit = " Lbs";
+					id_temp.Unit   = " F";														
+				}
+				else
+				{
+					id_height.label = "Height (Inch)";
+					id_weight.label = "Weight (Lbs)";
+					id_temp.label   = "Temp (F)";
+					
+					id_height.Unit = " Cm";
+					id_weight.Unit = " Kg";
+					id_temp.Unit   = " C";	
+				}
+				
+				id_height.invalidateDisplayList();
+				id_weight.invalidateDisplayList();
+				id_temp.invalidateDisplayList();
+				
+				bh = id_height.valueB;
+				bw = id_weight.valueB;
+				bt = id_temp.valueB;
+				
+				id_weight.valueB = id_weight.valueA;
+				id_height.valueB = id_height.valueA;
+				id_temp.valueB = id_temp.valueA;
+				
+				id_weight.valueA = bw;
+				id_height.valueA = bh;
+				id_temp.valueA = bt;
+				
+				heightPreValue = id_height.valueA;
+				weightPreValue = id_weight.valueA;
+				temprPreValue = id_temp.valueA;
+				
+				calculateBMI();
+			}
+			
+			public function SaveData(event:Event):void
+			{
+				var vital:VitalsDTO = new VitalsDTO();
+				if(vitalsDTO == null)
+				{								
+									
+					vital.ID = 0;					
+					
+					vital.CreatedAt = new Date();
+					vital.CreatedBy = model.LoggedInUserId;
+					
+					vital.IsDeleted = false;								
+					vital.IsDirty = true;								
+					vital.Editable = "true";					
+					vital.PatientID = model.patientDTO.ID;
+					
+					vital.VisitDate = model.VisitDate;
+					vital.VisitID	=	model.VisitID;
+					
+					vital.BPDys = id_SysPerDys.valueB.toString();	
+					vital.BPSys =  id_SysPerDys.valueA.toString();	
+					vital.Height =  id_height.valueA.toString();	
+					vital.Weight =  id_weight.valueA.toString();	
+					vital.Pulse = id_pulse.valueA.toString(); 	
+					vital.Respiration =  id_resp.valueA.toString();	
+					vital.Temperature =  id_temp.valueA.toString();	
+					vital.Oxygen =  id_os2.valueA.toString();	
+					vital.IsMetricDisplaySelected = isMetric;
+					
+					var addEv:PatientInputPhysicalVitalsEvent = new PatientInputPhysicalVitalsEvent(PatientInputPhysicalVitalsEvent.PATIENT_INPUT_VITALS_ADD_EVENT, true);
+					addEv.vitalsDTO = vital;
+					
+					dispatchEvent(addEv);
+					
+					resetData();
+				}
+				else 
+				{
+					
+					vital.CreatedAt = vitalsDTO.CreatedAt;
+					vital.CreatedBy = vitalsDTO.CreatedBy;
+					vital.VisitDate = vitalsDTO.VisitDate;
+					vital.VisitID = vitalsDTO.VisitID;
+					vital.PatientID = vitalsDTO.PatientID;
+					vital.ID = vitalsDTO.ID;
+					vital.DictationID = vitalsDTO.DictationID;
+					vital.IsDeleted = vitalsDTO.IsDeleted;
+					vital.Note = vitalsDTO.Note;
+					vital.NoteSubject = vitalsDTO.NoteSubject;
+					vital.serialNumber = vitalsDTO.serialNumber;
+					vital.sugarLevel = vitalsDTO.sugarLevel;
+					vital.IsDirty = true;
+					vital.ModifiedAt = new Date();
+					vital.ModifiedBy = model.LoggedInUserId;
+					vital.BPDys = id_SysPerDys.valueB.toString();	
+					vital.BPSys =  id_SysPerDys.valueA.toString();	
+					vital.Height =  id_height.valueA.toString();	
+					vital.Weight =  id_weight.valueA.toString();	
+					vital.Pulse = id_pulse.valueA.toString(); 	
+					vital.Respiration =  id_resp.valueA.toString();	
+					vital.Temperature =  id_temp.valueA.toString();	
+					vital.Editable = "true";
+					vital.PatientID = model.patientDTO.ID;
+					
+					vital.Oxygen =  id_os2.valueA.toString();	
+					vital.IsMetricDisplaySelected = isMetric;
+					
+					var editEv:PatientInputPhysicalVitalsEvent = new PatientInputPhysicalVitalsEvent(PatientInputPhysicalVitalsEvent.PATIENT_INPUT_VITALS_EDIT_EVENT, true);
+					editEv.vitalsDTO = vital;
+					
+					dispatchEvent(editEv);
+				}
+			}
+			
+			private function resetData():void
+			{
+				model.VitalDTO = null;
+				id_SysPerDys.valueA = 70;
+				id_SysPerDys.valueB = 50;
+				
+				if (isMetric)
+				{
+					id_height.valueA = 38.1;
+					id_height.valueB = 15;
+					id_weight.valueA = 1.8;
+					id_weight.valueB = 4;
+					id_temp.valueA = 35.2;
+					id_temp.valueB = 95.5;
+				}
+				else
+				{
+					id_height.valueA = 15;
+					id_height.valueB = 38.1;
+					id_weight.valueA = 4;
+					id_weight.valueB = 1.8;
+					id_temp.valueA = 95.5;
+					id_temp.valueB = 35.2;
+				}
+				
+				id_pulse.valueA = 50;
+				id_resp.valueA = 10;
+				
+				id_os2.valueA = 0;	
+				
+				calculateBMI();
+				
+				heightPreValue = 0;
+				weightPreValue = 0;
+				temprPreValue = 0;
+				pulsePreValue = 0;
+				respPreValue = 0;
+				bpSYSPreValue = 0;
+				bpDYSPreValue = 0;
+				
+				var ev:LoadPatientPreviousVitalsEvent = new LoadPatientPreviousVitalsEvent();
+				CairngormEventDispatcher.getInstance().dispatchEvent(ev);
+			}
+			
+			private function saveStatus(success:Boolean):void
+			{				
+				if(success && vitalsDTO == null)
+					resetData();
+			}
+			
+			public var heightPreValue:Number = 0;
+			public var weightPreValue:Number = 0;
+			public var temprPreValue:Number = 0;
+			public var pulsePreValue:Number = 0;
+			public var respPreValue:Number = 0;
+			public var bpSYSPreValue:Number = 0;
+			public var bpDYSPreValue:Number = 0;
+			protected function id_height_creationCompleteHandler(event:FlexEvent):void
+			{				
+				id_height.uiPop.addEventListener("OK",function():void
+				{
+					validateHeight();					
+				});
+			}
+			
+			protected function id_weight_creationCompleteHandler(event:FlexEvent):void
+			{
+				id_weight.uiPop.addEventListener("OK",function():void
+				{			
+					validateWeight()
+				});
+			}
+			
+			protected function id_temp_creationCompleteHandler(event:FlexEvent):void
+			{
+				id_temp.uiPop.addEventListener("OK",function():void
+				{
+					validateTemperature();
+				});
+			}
+			
+			public function calculateBMI():void
+			{
+				var hgt:Number = id_height.valueA;
+				var wgt:Number = id_weight.valueA;
+				var m:Number = 0;
+				if (! isMetric)
+				{
+					
+					var cm:Number 				= UnitConverter.inchesToCentimeters( hgt );
+					m				            = UnitConverter.centimetersToMeters( cm );
+					var hgtInMeterSq1:Number 	= Math.pow( m, 2 );
+					var kg:Number				= UnitConverter.poundsToKilograms( wgt );
+					
+					if (hgtInMeterSq1 > 0)
+					{
+						BMI =  int( ( kg / hgtInMeterSq1)* 100 ) / 100;
+					}
+					else
+						BMI = 0;					
+				}
+				else
+				{
+					m                     	 = UnitConverter.centimetersToMeters( hgt );
+					
+					var hgtInMeterSq2:Number = Math.pow( m , 2);
+					
+					if (hgtInMeterSq2 > 0)
+						BMI = int(( wgt / hgtInMeterSq2 ) * 100 ) / 100;
+					else
+						BMI = 0;
+					
+				}
+				
+				if (isNaN(BMI))
+					BMI = 0;
+			}
+			
+			protected function CC(event:FlexEvent):void
+			{
+				model.VitalDTO = null;
+				
+				calculateBMI();
+			}
+			
+			private function validateHeight():void
+			{
+				var isNotValid:Boolean = false;
+								
+				if (id_height.valueA && id_height.valueA > 0)
+				{					
+					if (! isMetric)											
+						isNotValid = ( id_height.valueA < 15 || id_height.valueA > 96 )					
+					else					
+						isNotValid = ( id_height.valueA < 38 || id_height.valueA > 245 )
+					
+					if (isNotValid)
+					{						
+						UtilityFunctions.AskMessage("Provided value for height does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[1],
+							alertsCloseHandlerNo,[1]);						
+					}
+					else
+						alertsCloseHandlerYes(1);
+				}
+				else
+					alertsCloseHandlerYes(1);
+			}
+			private function validateWeight():void
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_weight.valueA && id_weight.valueA > 0)
+				{					
+					if (! isMetric)											
+						isNotValid = ( id_weight.valueA < 4 || id_weight.valueA > 442 )					
+					else					
+						isNotValid = ( id_weight.valueA < 2 || id_height.valueA > 200 )
+					
+					if (isNotValid)
+					{						
+						UtilityFunctions.AskMessage("Provided value for weight does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[2],
+							alertsCloseHandlerNo,[2]);						
+					}
+					else
+						alertsCloseHandlerYes(2);
+				}
+				else
+					alertsCloseHandlerYes(2);
+			}
+			
+			private function validateTemperature():void
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_temp.valueA && id_temp.valueA > 0)
+				{					
+					if (! isMetric)											
+						isNotValid = ( id_temp.valueA < 95.5 || id_temp.valueA > 104.5 )					
+					else					
+						isNotValid = ( id_temp.valueA < 35 || id_temp.valueA > 40 )
+					
+					if (isNotValid)
+					{						
+						UtilityFunctions.AskMessage("Provided value for temperature does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[3],
+							alertsCloseHandlerNo,[3]);						
+					}
+					else
+						alertsCloseHandlerYes(3);
+				}
+				else
+					alertsCloseHandlerYes(3);
+			}
+			
+			private function validatePulse():void
+			{		
+				if (id_pulse.valueA && id_pulse.valueA > 0)
+				{			
+					if (id_pulse.valueA < 50 || id_pulse.valueA > 135 )
+					{						
+						UtilityFunctions.AskMessage("Provided value for pulse does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[4],
+							alertsCloseHandlerNo,[4]);						
+					}
+					else
+						alertsCloseHandlerYes(4);
+				}
+				else
+					alertsCloseHandlerYes(4);
+			}
+			
+			private function validateRespiratory():void
+			{		
+				if (id_resp.valueA && id_resp.valueA > 0)
+				{			
+					if (id_resp.valueA < 10 || id_resp.valueA > 65 )
+					{						
+						UtilityFunctions.AskMessage("Provided value for respiratory does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[5],
+							alertsCloseHandlerNo,[5]);						
+					}
+					else
+						alertsCloseHandlerYes(5);
+						
+				}
+				else
+					alertsCloseHandlerYes(5);
+			}
+			
+			private function validateBloodPressure():void
+			{		
+				if ((id_SysPerDys.valueA && id_SysPerDys.valueA > 0 ) || (id_SysPerDys.valueB && id_SysPerDys.valueB > 0 ) )
+				{
+					var msgPart:String = "Sys & Dys";	
+					var type:int = 0;
+					if (id_SysPerDys.valueA < 70 || id_SysPerDys.valueA > 140 )
+					{						
+						type = 6;	
+						msgPart = "Sys";
+					}
+					if (id_SysPerDys.valueB < 70 || id_SysPerDys.valueB > 140 )
+					{						
+						if (type == 6) 
+						{
+							type = 8;
+							msgPart = "Sys & Dys";
+						}
+						else
+						{
+							msgPart = "Dys";
+							type = 7;
+						}
+					}
+					if(type > 0)
+						UtilityFunctions.AskMessage("Provided value for blood pressure(" + msgPart + ") does not occur in feasible range.\n Do you want to keep these values",alertsCloseHandlerYes,[type],
+						alertsCloseHandlerNo,[type]);	
+					else
+						alertsCloseHandlerYes(8)
+				}
+			}		
+			
+			private function alertsCloseHandlerYes(id:int):void
+			{
+				switch(id)
+				{
+					case 1:
+					{
+						if(isMetric)
+							id_height.valueB = UnitConverter.centimetersToInches(id_height.valueA);
+						else
+							id_height.valueB = UnitConverter.inchesToCentimeters(id_height.valueA);
+						
+						heightPreValue = id_height.valueA;
+						calculateBMI();						
+						break;
+					}
+						
+					case 2:
+					{
+						if(isMetric)
+							id_weight.valueB = UnitConverter.kilogramsToPounds(id_weight.valueA);
+						else
+							id_weight.valueB = UnitConverter.poundsToKilograms(id_weight.valueA);
+						
+						weightPreValue = id_weight.valueA;
+						calculateBMI();						
+						break;
+					}
+					case 3:
+					{
+						if(isMetric)
+							id_temp.valueB = UnitConverter.celsiusToFahrenheit(id_temp.valueA);
+						else
+							id_temp.valueB = UnitConverter.fahrenheitToCelsius(id_temp.valueA);
+						
+						temprPreValue = id_temp.valueA;
+						break;
+					}
+					case 4:
+					{
+						pulsePreValue = id_pulse.valueA;
+						break;
+					}
+					case 5:
+					{
+						respPreValue = id_resp.valueA;
+						break;
+					}
+					case 6:									
+					case 7:										
+					case 8:
+					{
+						bpSYSPreValue = id_SysPerDys.valueA;
+						bpDYSPreValue = id_SysPerDys.valueB;
+						break;
+					}					
+				}
+			}
+			
+			private function alertsCloseHandlerNo(id:int):void
+			{
+				switch(id)
+				{
+					case 1:
+					{
+						id_height.valueA = heightPreValue;
+						break;
+					}
+						
+					case 2:
+					{
+						id_weight.valueA = weightPreValue;
+						break;
+					}
+					case 3:
+					{
+						id_temp.valueA = temprPreValue;
+						break;
+					}
+					case 4:
+					{
+						id_pulse.valueA = pulsePreValue;
+						break;
+					}
+					case 5:
+					{
+						id_resp.valueA = respPreValue;
+						break;
+					}
+					case 6:
+					{
+						id_SysPerDys.valueA = bpSYSPreValue;						
+						break;
+					}					
+					case 7:
+					{						
+						id_SysPerDys.valueB = bpDYSPreValue;
+						break;
+					}					
+					case 8:
+					{
+						id_SysPerDys.valueA = bpSYSPreValue;
+						id_SysPerDys.valueB = bpDYSPreValue;
+						break;
+					}					
+				}
+			}
+			
+			protected function id_pulse_creationCompleteHandler(event:FlexEvent):void
+			{
+				id_pulse.uiPop.addEventListener("OK",function():void
+				{			
+					validatePulse();
+				});
+			}
+			
+			protected function id_resp_creationCompleteHandler(event:FlexEvent):void
+			{
+				id_resp.uiPop.addEventListener("OK",function():void
+				{			
+					validateRespiratory();
+				});
+			}
+			
+			protected function id_SysPerDys_creationCompleteHandler(event:FlexEvent):void
+			{
+				id_SysPerDys.uiPop.addEventListener("OK",function():void
+				{			
+					validateBloodPressure();
+				});
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+		<mx:NumberFormatter id="numFormatter" rounding="up" precision="1"/>
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout gap="2"/>
+	</s:layout>
+	<s:HGroup width="100%" gap="0">
+		<component:DecimalInputWithSpinnerPop id="id_height" label="Height (Inch)" width="33%" valueA="15" valueB="38.1" Unit=" Cm"
+											  creationComplete="id_height_creationCompleteHandler(event)"  />		
+		<component:DecimalInputWithSpinnerPop id="id_weight" label="Weight (Lbs)" width="33%" valueA="4" valueB="1.8" Unit=" Kg"
+											  creationComplete="id_weight_creationCompleteHandler(event)" />
+		<component:DecimalInputWithSpinnerPop id="id_temp" label="Temp (F)" width="33%" valueA="95.5" valueB="35.2" Unit=" C"
+											  creationComplete="id_temp_creationCompleteHandler(event)" />
+		<s:Spacer width="4"/>		
+		<vitals:VitalBMI BMI="{numFormatter.format(BMI).toString()}"/>
+	</s:HGroup>
+	<s:HGroup width="100%" gap="0">
+		<component:DecimalInputWithSpinnerPop id="id_pulse" label="Pulse (Min)" width="25%" show2ndValue="false" valueA="50"
+											  creationComplete="id_pulse_creationCompleteHandler(event)"/>		
+		<component:DecimalInputWithSpinnerPop id="id_resp" label="Resp. (Min)" width="25%" show2ndValue="false" valueA="10"
+											  creationComplete="id_resp_creationCompleteHandler(event)"/>
+		<component:ValuePairInputWithSpinnerPop id="id_SysPerDys" label="BP (Sys/Dys)" width="25%" valueA="70" valueB="50"
+												creationComplete="id_SysPerDys_creationCompleteHandler(event)"/>
+		<component:DecimalInputWithSpinnerPop id="id_os2" label="O2 (%)" width="25%" valueA="0" show2ndValue="false"  valueB="0"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="bottom" horizontalAlign="right"
+			  paddingRight="2" paddingTop="2" gap="2"
+			  >
+		<s:Button buttonMode="true"
+				  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin" 
+				  toolTip="Save" click="SaveData(event)"
+				  />
+		<s:Button buttonMode="true"
+				  skinClass="com.gazuntite.skins.controls.button.NextButtonSkin" 
+				  toolTip="Next"
+				  visible="{!inItemRenderer}"
+				  includeInLayout="{!inItemRenderer}"
+				  />
+	</s:HGroup>
+</s:Group>

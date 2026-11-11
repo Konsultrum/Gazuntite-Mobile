@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Button xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  label="{navModel.nextItem.title}"
+		  visible="{navModel.nextItem!=null}"
+		  includeInLayout="{navModel.nextItem!=null}"
+		  click="onNextClick(event)"
+		  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.navigation.ViewFactory;
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfo;
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfoItem;
+			
+			import spark.components.ViewNavigator;
+			import spark.transitions.SlideViewTransition;
+			import spark.transitions.ViewTransitionDirection;
+			
+			[Bindable]
+			public var navigator:ViewNavigator;
+			
+			[Bindable]
+			public var navModel:NavigationInfoItem;
+			
+			public function onNextClick(event:MouseEvent=null):void
+			{
+				if (navModel == null || navModel.nextItem==null)
+				{
+					return;
+				}
+				
+				var slide:SlideViewTransition = new SlideViewTransition();
+				slide.direction = ViewTransitionDirection.LEFT;
+				navigator.popAll();
+				var next_view:Class = ViewFactory.getViewClass(navModel.nextItem.viewId);
+				navigator.pushView(next_view, navModel.nextItem, navigator.context, slide);
+				if (navigator.context!=null)
+				{
+					(navigator.context as NavigationInfo).currentSubNavItem = navModel.nextItem;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+</s:Button>

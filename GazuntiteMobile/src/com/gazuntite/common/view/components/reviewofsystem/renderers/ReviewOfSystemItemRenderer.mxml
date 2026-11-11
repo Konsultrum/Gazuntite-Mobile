@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				height="28" width="100"
+				creationComplete="onCreated(event)"
+				>
+	<fx:Script>
+		<![CDATA[
+			
+			import mx.events.FlexEvent;
+			
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+			}
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+//				uiAbnormal.visible = Math.random()>0.7;
+//				uiAbnormal.includeInLayout = uiAbnormal.visible;
+//				uiNoteSign.visible = Math.random()>0.6;
+//				uiNoteSign.includeInLayout = uiNoteSign.visible;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:Rect left="0" right="0" top="0" bottom="0" alpha="1" radiusX="0">
+		<s:stroke>
+			<s:SolidColorStroke caps="round" color="#545454" joints="miter" miterLimit="3" weight="1"/>
+		</s:stroke>
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry alpha="1" color="#FFFFFF" ratio="0"/>
+				<s:GradientEntry alpha="1.0" color="#D7D7D7" ratio="0.49019607843137253"/>
+				<s:GradientEntry alpha="1.0" color="#BDBBB5" ratio="0.4980392156862745"/>
+				<s:GradientEntry alpha="1.0" color="#D1D1D1" ratio="0.9058823529411765"/>
+				<s:GradientEntry alpha="1.0" color="#FFFFFF" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>
+	
+	<s:HGroup left="0" right="0" top="0" bottom="0" verticalAlign="middle"
+			  paddingLeft="8" paddingRight="4" gap="2"
+			  >
+		<s:RichText color="#000000" fontFamily="Calibri"
+					fontSize="12" 
+					text="{data.label}"
+					width="100%" maxDisplayedLines="1" showTruncationTip="true"
+					/>	
+<!--		<s:BitmapImage id="uiAbnormal" smooth="true"
+					   source="@Embed('/assets/images/Abnormal_Indication.png')"
+					   />
+-->		<s:ToggleButton 
+						skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+						buttonMode="true" useHandCursor="true" toolTip="Normal"
+						/>
+	</s:HGroup>
+<!--	<s:BitmapImage id="uiNoteSign" right="2" verticalCenter="-8" smooth="true" 
+				   source="@Embed('/assets/images/Dot.png')"
+				   />
+-->	
+
+</s:ItemRenderer>

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="true" xmlns:buttonSkins="com.adobe.gazuntite.skins.chrome.buttonSkins.*"
+				width="100%" xmlns:components="com.gazuntite.components.*"
+				creationComplete="cc()" xmlns:dictation="com.gazuntite.components.dictation.*">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.skins.controls.button.input.DictataionRedButtonSkin;
+			import com.gazuntite.skins.controls.button.input.NotesRedButtonSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import flash.net.dns.AAAARecord;
+			
+			import mx.states.OverrideBase;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				if (data.hasOwnProperty("hasDictation") && data.hasDictation)
+				{
+					uiDication.setStyle("skinClass", DictataionRedButtonSkin);
+				}
+				
+				if (data.hasOwnProperty("hasNotes") && data.hasNotes)
+				{
+					uiNote.setStyle("skinClass", NotesRedButtonSkin);
+				}
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void
+			{
+				id_Header.setStyle("skinClass", itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function cc():void
+			{
+				addEventListener(PatientDictationNoteViewEvent.PATIENT_DICTATION_NOTE_SAVE_EVENT, patientDictationNoteSaveHandler, false, 0, true);
+			}
+			
+			private function patientDictationNoteSaveHandler(event:PatientDictationNoteViewEvent):void
+			{
+				if (!data)
+					return;
+				
+				if (!data.hasOwnProperty("ModuleTypeID"))
+					return;
+			
+				event.data = data;
+			}
+			
+			public function getFormattedVisitDate(dto:Object):String
+			{
+				if (!dto)
+					return "";
+				
+				if (!dto.hasOwnProperty("VisitDate"))
+					return "";
+				
+				if (!dto.VisitDate)
+					return "";
+				
+				return UtilityFunctions.FormatDate(dto.VisitDate, "MM/DD/YYYY");
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout >
+		<s:VerticalLayout gap="0" horizontalAlign="center" paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"/> 
+	</s:layout>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="35">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="5"/>
+		</s:layout>
+		
+		<s:Label id="SrNo" 
+				 text="{data.serialNumber.toString()}" fontFamily="CalibriCFF" fontSize="14" width="30"
+				 paddingLeft="6" maxDisplayedLines="1"/>
+		
+		<s:HGroup width="100%" horizontalAlign="left" verticalAlign="middle" gap="0">
+			<buttonSkins:buttonNavSeparator width="1" height="100%"/>
+			<s:Label id="visitDate" 
+					 text="{getFormattedVisitDate(data)}" toolTip="{getFormattedVisitDate(data)}" 
+					 fontFamily="CalibriCFF" fontSize="14" width="100%"
+					 paddingLeft="6" maxDisplayedLines="1"/>
+		</s:HGroup>
+		
+		<s:HGroup width="120" horizontalAlign="center" verticalAlign="middle">
+			<buttonSkins:buttonNavSeparator width="1" height="100%"/>
+			
+			<s:HGroup width="100%" horizontalAlign="center">
+				<s:ToggleButton id="uiDication" skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+						  buttonMode="true" useHandCursor="true" toolTip="Dictation" selected="@{data.dictationNoteViewModel.inDictationMode}"/>
+				<s:ToggleButton id="uiNote" skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+								buttonMode="true" useHandCursor="true" toolTip="Notes" selected="@{data.dictationNoteViewModel.inNoteMode}"/>
+			</s:HGroup>
+			
+		</s:HGroup>
+	</s:SkinnableContainer>
+	<dictation:PatientDictationNoteView width="100%" viewModel="{data.dictationNoteViewModel}" note="@{data.Note}"/>
+</s:ItemRenderer>

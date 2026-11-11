@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:component="com.gazuntite.view.patient.component.*"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.physical.ccHpi.ChiefComplaintHpiDTO;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			
+			[Bindable]	private var labelWidth:int = 100;
+			
+			private var _chiefComplaintHpiDTO:ChiefComplaintHpiDTO;
+			
+			[Bindable]
+			public function get chiefComplaintHpiDTO():ChiefComplaintHpiDTO
+			{
+				return _chiefComplaintHpiDTO;
+			}
+
+			public function set chiefComplaintHpiDTO(value:ChiefComplaintHpiDTO):void
+			{
+				_chiefComplaintHpiDTO = value;
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingTop="8" paddingBottom="8" gap="6"/>
+	</s:layout>
+	
+	<s:VGroup width="100%" gap="1">
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:BitmapImage id="img_ChiefComplaint" source="{(chiefComplaintHpiDTO.ChiefComplaint.length > 0)? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Chief Complaint:" styleName="patientFormLabel"/>
+			<s:Label id="id_ChiefComplaint" 
+					 text="{chiefComplaintHpiDTO.ChiefComplaint}" toolTip="{chiefComplaintHpiDTO.ChiefComplaint}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue" width="100%"/>
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:Label text="History of Present Illness" styleName="patientNameSubTitle" color="#3194BE" paddingLeft="14" paddingTop="4" paddingBottom="4"/>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:BitmapImage id="img_Symptoms" source="{chiefComplaintHpiDTO.HPIFields.Symptom.length > 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Symptoms:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label id="id_SymptomsCmbo" text="{chiefComplaintHpiDTO.HPIFields.Symptom}" toolTip="{chiefComplaintHpiDTO.HPIFields.Symptom}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Duration:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Duration}" toolTip="{chiefComplaintHpiDTO.HPIFields.Duration}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Location:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Location}" toolTip="{chiefComplaintHpiDTO.HPIFields.Location}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Quality:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Quality}" toolTip="{chiefComplaintHpiDTO.HPIFields.Quality}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+	</s:HGroup>
+	<s:HGroup width="100%">
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Severity:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Severity}" toolTip="{chiefComplaintHpiDTO.HPIFields.Severity}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Context:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Context}" toolTip="{chiefComplaintHpiDTO.HPIFields.Context}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Modifying Factors:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.ModifyingFactors}" toolTip="{chiefComplaintHpiDTO.HPIFields.ModifyingFactors}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Exacerbating:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Exacerbating}" toolTip="{chiefComplaintHpiDTO.HPIFields.Exacerbating}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Progression:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Progression}" toolTip="{chiefComplaintHpiDTO.HPIFields.Progression}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Radiation:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{chiefComplaintHpiDTO.HPIFields.Radiation}" toolTip="{chiefComplaintHpiDTO.HPIFields.Radiation}"
+					 maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"  width="100%"/>
+		</s:HGroup>
+		
+	</s:HGroup>
+	
+</s:SkinnableContainer>

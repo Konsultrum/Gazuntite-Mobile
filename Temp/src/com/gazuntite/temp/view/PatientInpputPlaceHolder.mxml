@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark"
+				   >
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+			
+			protected function changeField(ti:TextInput):void
+			{
+				stage.focus = null;
+				ti.setFocus();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout/>
+	</s:layout>
+	<s:Label text="Patient Input View Place Holder" horizontalCenter="0" verticalCenter="0" fontSize="48"/>
+	<s:Scroller width="100%" height="100%">
+		<s:Group>
+			
+			<s:Form width="100%" height="100%">
+				<s:FormItem label="item one:">
+					<s:TextInput id="t1"
+								 returnKeyLabel="next"
+								 enter="changeField(t2)"/>
+				</s:FormItem>
+				<s:FormItem label="item two:">
+					<s:TextInput id="t2"
+								 returnKeyLabel="next"
+								 enter="changeField(t3)"/>
+				</s:FormItem>
+				<s:FormItem label="item three:">
+					<s:TextInput id="t3"
+								 returnKeyLabel="done"
+								 enter="changeField(t1)"/>
+				</s:FormItem>
+			</s:Form>
+		</s:Group>
+	</s:Scroller>
+</s:BorderContainer>

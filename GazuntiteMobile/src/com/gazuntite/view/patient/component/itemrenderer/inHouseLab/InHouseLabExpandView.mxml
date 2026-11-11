@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+///////////////////////////////////////////////
+///    Author : Tahir Alvi					///
+///    Date   : 26 August, 2013				///
+///    Project: Gazuntite Online Clinic		///
+///////////////////////////////////////////////
+-->
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  xmlns:component="com.gazuntite.view.patient.component.*"
+					  skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.physical.inHouseLab.InHouseLabDTO;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			
+			[Bindable]	private var labelWidth:int = 100;
+			
+			private var _inHouseLabDTO:InHouseLabDTO;
+			private var labTestChanged:Boolean;
+			
+			[Bindable]
+			public function get inHouseLabDTO():InHouseLabDTO
+			{
+				return _inHouseLabDTO;
+			}
+			
+			public function set inHouseLabDTO(value:InHouseLabDTO):void
+			{
+				_inHouseLabDTO = value;
+			}
+		
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:HorizontalLayout paddingLeft="6" paddingRight="6" paddingTop="4" paddingBottom="4"/>
+	</s:layout>
+	
+	<s:VGroup width="50%" verticalAlign="top">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_TestName" source="{QIConstants.IMG_GREEN}"/>
+			<s:Label text="Test Name:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{inHouseLabDTO.InHouseLabTestType.Name}" toolTip="{inHouseLabDTO.InHouseLabTestType.Name}" width="100%" maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_IcdCode" source="{QIConstants.IMG_GREEN}"/>
+			<s:Label text="CPT Code:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{inHouseLabDTO.InHouseLabTestType.Code}" toolTip="{inHouseLabDTO.InHouseLabTestType.Code}" width="100%" maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue"/>
+		</s:HGroup>
+	</s:VGroup>	
+	<s:VGroup width="50%" verticalAlign="top">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:Label text="Result:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label width="100%" text="{inHouseLabDTO.Result}" toolTip="{inHouseLabDTO.Result}"  maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue" />
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:Label text="Normal Range:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:Label text="{inHouseLabDTO.InHouseLabTestType.NormalRange}" toolTip="{inHouseLabDTO.InHouseLabTestType.NormalRange}"  maxDisplayedLines="1" showTruncationTip="true" styleName="patientFormValue" />
+		</s:HGroup>
+	</s:VGroup>	
+	
+</s:SkinnableContainer>

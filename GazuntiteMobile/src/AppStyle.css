@@ -1,0 +1,96 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace component "com.gazuntite.view.component.*";
+@namespace component1 "com.gazuntite.view.common.component.*";
+@namespace navigation "com.gazuntite.view.common.navigation.*";
+@namespace component2 "com.gazuntite.common.view.component.*";
+@namespace navigation1 "com.gazuntite.common.view.navigation.*";
+
+
+@font-face
+{
+	src : url("assets\fonts\CALIBRI.TTF") ;
+	fontFamily : CalibriCFF ;
+	embedAsCFF : true ;
+}
+
+
+@font-face
+{
+	src : url("assets\fonts\CALIBRIB.TTF") ;
+	fontFamily : CalibriCFF;
+	fontWeight: bold;
+	embedAsCFF : true ;
+}
+
+
+global
+{
+}
+s|Label
+{
+	fontFamily : CalibriCFF;
+}
+s|ToggleButton
+{
+	fontWeight:bold;
+}
+
+s|ActionBar
+{
+	defaultButtonAppearance: beveled;
+}
+navigation1|NavigationBackButton
+{
+	skinClass:ClassReference("spark.skins.mobile.BeveledBackButtonSkin");
+}
+.navigationBackButton
+{
+	skinClass:ClassReference("spark.skins.mobile.BeveledBackButtonSkin");
+}
+s|TextInput
+{
+	fontFamily: CalibriCFF;
+	/* This is to support scroll for text input when soft keyboard is activated. */
+	skinClass: ClassReference("spark.skins.mobile.TextInputSkin");
+
+/*	skinClass: ClassReference("spark.skins.mobile.StageTextInputSkin");*/
+}
+
+component2|SearchInput s|TextInput
+{
+	skinClass: ClassReference("spark.skins.mobile.TextInputSkin");
+}
+	
+.searchTextInput
+{
+	skinClass: ClassReference("spark.skins.mobile.TextInputSkin");
+}
+.test
+{
+	color: #ff9900;
+}
+
+/********************************************************
+***  Desktop Skin Switches **********
+*********************/
+.inputViewSkin
+{
+	/*	skinClass: ClassReference("com.gazuntite.skins.controls.container.PatientInputSubViewContainerSkin");*/
+}
+.autoComplete
+{
+	skinClass: ClassReference("com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin");
+}
+.dateCoverBG
+{
+	/*	skinClass: "com.gazuntite.skins.controls.container.input.DateCoverSkin";*/
+}
+.yesNoToggle
+{
+	skinClass: ClassReference("com.gazuntite.view.patient.component.YesNoToggleButtonSkin")
+}
+.patientSearchDropdown
+{
+	skinClass: ClassReference("com.gazuntite.skins.controls.combobox.CustomDropDownListSkin");
+}

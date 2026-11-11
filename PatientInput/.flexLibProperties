@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="true" version="3">
+  <includeClasses>
+    <classEntry path="com.gazuntite.input.main.viewmodel.PatientInputViewModel"/>
+    <classEntry path="com.gazuntite.input.main.view.PatientInputTitleBar"/>
+    <classEntry path="com.gazuntite.input.main.view.SoapBar"/>
+    <classEntry path="com.gazuntite.input.comprehensive.view.ComprehensiveInputView"/>
+    <classEntry path="com.gazuntite.input.comprehensive.view.general.GeneralItemCallout"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

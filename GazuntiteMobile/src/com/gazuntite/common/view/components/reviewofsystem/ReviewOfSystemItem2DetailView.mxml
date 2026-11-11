@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx">
+	<fx:Script>
+		<![CDATA[
+
+			[Bindable]
+			protected var viewModel:PatientInputPhysicalReviewOfSystemViewModel = PatientInputPhysicalReviewOfSystemViewModel.getInstance();
+			
+			private var m_oModel:Object;
+			
+			[Bindable]
+			public var selectedItemRow:int = 0;
+			
+			[Bindable]
+			public var listItemHeight:int = 27;
+			
+			[Bindable]
+			public var tabWidth:int = 149;
+			
+			[Bindable]
+			public var topOffset:int = 4;
+			
+			[Bindable]
+			public var tabButtonOffset:int = 98;
+			
+			[Bindable]
+			protected var inRecordModel:Boolean = false;
+			
+
+			[Bindable]
+			public function get model():Object
+			{
+				return m_oModel;
+			}
+
+			public function set model(value:Object):void
+			{
+				m_oModel = value;
+			}
+
+			protected function onDetailLevelSelectionChange(event:Event):void
+			{
+				viewModel.rosDetailSelectedItemIndex=-1;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+		<s:filters>
+			<s:DropShadowFilter alpha="0.5" angle="45.0" blurX="1" blurY="1" color="#000000"
+								distance="1" hideObject="false" inner="false" knockout="false"
+								quality="2" strength="1"/>
+		</s:filters>
+	<s:Group
+		x="{-tabWidth}" y="{selectedItemRow*listItemHeight+topOffset}"
+		>
+		<s:ToggleButton 
+						label="{model.label.toUpperCase()}" width="{tabWidth+10}"
+						skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.AvgWeightTB1"
+						selected="@{viewModel.showRosItemLevel2DetailView}"
+						change="onDetailLevelSelectionChange(event)"
+						buttonMode="true"	toolTip="{model.label.toUpperCase()}"
+						/>
+		<s:ToggleButton id="id_btnNormal" 
+			left="{tabButtonOffset}" verticalCenter="0"
+			skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+			buttonMode="true" toolTip="Normal"/>
+		<s:ToggleButton id="id_btnAbnormal" 
+			left="{tabButtonOffset+20}" verticalCenter="0"
+			selected="{id_btnNormal.selected == false}"
+			skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.ATB1"
+			buttonMode="true" toolTip="Abnormal"/>
+	</s:Group>
+	
+	
+	<s:Rect x="0" y="0" width="100%" height="100%" alpha="1" radiusX="3">
+<!--		<s:filters>
+			<s:DropShadowFilter alpha="0.5" angle="45.0" blurX="1" blurY="1" color="#000000"
+								distance="1" hideObject="false" inner="false" knockout="false"
+								quality="2" strength="1"/>
+		</s:filters>
+-->		<s:fill>
+			<s:LinearGradient rotation="0">
+				<s:GradientEntry alpha="1" color="0x83A3FE" ratio="0"/>
+				<s:GradientEntry alpha="1" color="0xA0B9FE" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>		
+		<!-- background -->
+		<s:BorderContainer left="2" top="4" right="4" bottom="4" cornerRadius="3" borderVisible="false" backgroundAlpha="0" backgroundColor="#FFEE8B">
+			<s:layout>
+				<s:VerticalLayout 
+					paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"
+					verticalAlign="top" horizontalAlign="right"
+					/>
+			</s:layout>
+			<s:HGroup width="100%" horizontalAlign="right" gap="2" paddingRight="2" verticalAlign="middle">
+				<s:Label text="{model.label.toUpperCase()}" width="100%" maxDisplayedLines="1" showTruncationTip="true" fontFamily="Calibri" fontSize="14" fontWeight="bold"/>
+				<s:Button skinClass="com.gazuntite.skins.controls.button.eLab.AttachBtnSkin"
+						  buttonMode="true" useHandCursor="true" toolTip="Attachment"
+						  />
+				<s:ToggleButton selected="@{inRecordModel}" 
+								skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.RecLvlDictationToggleButtonSkin"
+								buttonMode="true" useHandCursor="true" toolTip="Record"/>
+				<s:ToggleButton id="uiNote" 
+								skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NotesButtonSkin" 
+								selected="{!inRecordModel}" change="inRecordModel = !uiNote.selected"
+								buttonMode="true" useHandCursor="true" toolTip="Notes"/>
+			</s:HGroup>
+			<s:Group width="100%" height="100%"
+					 visible="{!inRecordModel}" includeInLayout="{!inRecordModel}"
+					 >
+				
+				<s:Rect left="4" right="4" top="4" bottom="4" alpha="1" radiusX="3">
+					<s:fill>
+						<s:LinearGradient rotation="90">
+							<s:GradientEntry alpha="1.0" color="#FFFFFF" ratio="0"/>
+							<s:GradientEntry alpha="1.0" color="#CCCCCC" ratio="1"/>
+						</s:LinearGradient>
+					</s:fill>
+					<s:filters>
+						<s:GlowFilter alpha="1.0" blurX="8" blurY="8" color="#0000FF" inner="false"
+									  knockout="false" quality="3" strength="1"/>
+					</s:filters>
+				</s:Rect>				
+				<s:TextArea prompt="Enter Notes" text="@{model.Note}" left="6" right="6" top="6" bottom="6" borderVisible="false" contentBackgroundAlpha="0" fontFamily="CalibriCFF" fontStyle="normal" color="0x666666"/>
+			</s:Group>
+			<s:VGroup width="100%" height="100%" horizontalAlign="center" verticalAlign="top"
+					  visible="{inRecordModel}" includeInLayout="{inRecordModel}"
+					  >
+				<s:SkinnableContainer
+					id="uiDictationContainer"
+					skinClass="com.gazuntite.skins.controls.container.DictationNoteHightSkin"
+					width="100%" 
+					>
+					<s:layout>
+						<s:HorizontalLayout verticalAlign="middle" paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"/>
+					</s:layout>
+					<s:Button skinClass="com.gazuntite.skins.controls.button.patient.DictationPlayButtonSkin"
+							  buttonMode="true" toolTip="Play"
+							  />
+					<s:Button skinClass="com.gazuntite.skins.controls.button.patient.DictationRecordButtonSkin"
+							  buttonMode="true" toolTip="Record"
+							  
+							  />
+					<s:HScrollBar width="100%" skinClass="com.gazuntite.skins.controls.scrollbar.DictationHScrollBarSkin"/>
+					<s:Label text="2:38" fontFamily="Calibri"
+							 visible="{inRecordModel}" includeInLayout="{inRecordModel}"
+							 />
+				</s:SkinnableContainer>
+				<s:Label text="Recording 001" fontFamily="Calibri"
+						 visible="{inRecordModel}" includeInLayout="{inRecordModel}"
+						 />
+			</s:VGroup>
+			<s:HGroup width="100%" verticalAlign="bottom" horizontalAlign="right"
+					  paddingRight="2" paddingTop="2" gap="2"
+					  visible="false" includeInLayout="false">
+				<s:Button buttonMode="true"
+						  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin" 
+						  toolTip="Save"
+						  />
+<!--				<s:Button buttonMode="true"
+						  skinClass="com.gazuntite.view.patient.component.NextButtonSkin" 
+						  toolTip="Next"
+						  visible="{!inItemRenderer}"
+						  includeInLayout="{!inItemRenderer}"
+						  />
+-->			</s:HGroup>
+
+		</s:BorderContainer>
+</s:Group>

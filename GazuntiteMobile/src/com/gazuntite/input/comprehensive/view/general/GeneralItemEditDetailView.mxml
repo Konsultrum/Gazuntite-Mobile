@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 currentState="form" xmlns:component="com.gazuntite.view.patient.component.*" 
+		 xmlns:components="com.gazuntite.controls.extended.components.*" xmlns:component1="com.gazuntite.common.view.component.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputViewModel;
+			import com.gazuntite.temp.integration.SearchInputManagerGeneral;
+			import com.gazuntite.temp.model.TempDataModel;
+			[Bindable]
+			public var labelWidth:int = 100;
+			private var _canInput:Boolean = true;
+
+			[Bindable]
+			public function get canInput():Boolean
+			{
+				return _canInput;
+			}
+
+			public function set canInput(value:Boolean):void
+			{
+				_canInput = value;
+				if(value)
+					currentState = "form";
+				else
+					currentState = "noData";
+			}
+			
+			public function goNext():void
+			{
+				switch (this.currentState)
+				{
+					case "note":
+						currentState = "form";
+						break;
+					case "form":
+						currentState = "dictation";
+						break;
+					case "dictation":
+						currentState = "note";
+						break;
+				}
+			}
+			public function goPrev():void
+			{
+				switch (this.currentState)
+				{
+					case "note":
+						currentState = "dictation";
+						break;
+					case "form":
+						currentState = "note";
+						break;
+					case "dictation":
+						currentState = "form";
+						break;
+				}
+			}
+
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout horizontalAlign="right" paddingTop="4" paddingRight="4" gap="0"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="noData"/>		
+		<s:State name="note"/>
+		<s:State name="form"/>
+		<s:State name="dictation"/>		
+	</s:states>
+	<s:HGroup width="100%" horizontalAlign="right" verticalAlign="middle" paddingRight="4" gap="4" >
+		<s:HGroup visible="{canInput}" verticalAlign="middle">
+<!--			<s:Rect x="0" y="0" bottom="0" right="0" radiusX="10">
+				<s:fill>
+					<s:LinearGradient rotation="90">
+						<s:GradientEntry alpha="1.0" color="#9E9E9E" ratio="0"/>
+						<s:GradientEntry alpha="1.0" color="#5E5E5E" ratio="0.4980392156862745"/>
+						<s:GradientEntry alpha="1.0" color="#474747" ratio="0.5019607843137255"/>
+						<s:GradientEntry alpha="1.0" color="#3A3B3B" ratio="1"/>
+					</s:LinearGradient>
+				</s:fill>
+				<s:filters>
+					<s:DropShadowFilter alpha="0.5" angle="90" blurX="0" blurY="0" color="#FFFFFF" distance="1" hideObject="false" inner="false" knockout="false" quality="3" strength="1"/>
+					<s:DropShadowFilter alpha="1" angle="90" blurX="2" blurY="2" color="#000000"
+										distance="1" hideObject="false" inner="true" knockout="false"
+										quality="3" strength="1"/>
+				</s:filters>
+			</s:Rect>
+-->			
+			<s:Button label="Prev"
+					  verticalCenter="0" useHandCursor="true" buttonMode="true" toolTip="Previous"
+					  click="goPrev()"
+					  />
+			<s:Label text="NOTES" includeIn="note" horizontalCenter="0" verticalCenter="0" fontFamily="CalibriCFF" fontWeight="bold" color="#FFFFFF" fontSize="14"/>
+			<s:Label text="FORM" includeIn="form" horizontalCenter="0" verticalCenter="0" fontFamily="CalibriCFF" fontWeight="bold" color="#FFFFFF" fontSize="14"/>
+			<s:Label text="DICTATION" includeIn="dictation" horizontalCenter="0" verticalCenter="0" fontFamily="CalibriCFF" fontWeight="bold" color="#FFFFFF" fontSize="14"/>
+			<s:Button label="Next"
+					  verticalCenter="0" useHandCursor="true" buttonMode="true" toolTip="Next"
+					  click="goNext()"
+					  />
+		</s:HGroup>
+		
+		<s:Button label="Save" useHandCursor="true" buttonMode="true"
+				  />
+		<s:Button
+			skinClass="com.gazuntite.common.view.skin.NextButtonSkin"
+			toolTip="Next"
+			buttonMode="true" useHandCursor="true"
+			visible="false" includeInLayout="false"
+			/>
+	</s:HGroup>
+	
+	<s:VGroup width="100%" height="100%" verticalAlign="middle" horizontalAlign="right"
+			  paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"
+			  visible="{!canInput}"  includeIn="noData"
+			  >
+		<s:BorderContainer width="100%" height="100%" cornerRadius="3" backgroundColor="0xD0DEF6"  borderColor="#5A5A5A" borderWeight="1">
+			<s:Label  text="None" fontSize="18" fontWeight="bold" fontFamily="CalibriCFFBold" horizontalCenter="0" verticalCenter="0"/>
+		</s:BorderContainer>
+	</s:VGroup>
+	
+	<s:VGroup width="100%" height="100%" 
+			  paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"
+			  visible="{canInput}" includeIn="note"
+			  >
+		<s:TextArea id="id_TextArea" 
+								  width="100%" height="100%" 
+								  prompt="Notes"
+								  />
+	</s:VGroup>
+	
+	<component1:PatientInputDictation 
+		width="100%" height="100%" 
+		includeIn="dictation" visible="{canInput}"
+		/>
+	
+	<s:VGroup width="100%" height="100%"
+			  paddingLeft="10" paddingRight="4" paddingTop="4" paddingBottom="4"
+			  visible="{canInput}" includeIn="form"
+			  >
+		<s:HGroup verticalAlign="middle"  width="100%" >
+			<s:Label text="ICD Code:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<component1:SearchInput viewModel="{new SearchInputViewModel()}" 
+									searchInputManager="{new SearchInputManagerGeneral(TempDataModel.getInstance().icd9CodeList)}"
+									width="100%"
+									/>
+			<s:ComboBox id="id_ICDCode" toolTip="{id_ICDCode.selectedItem ? id_ICDCode.selectedItem.IcdCodeName : 'ICD Code'}"
+						prompt="ICD Code" width="225" 
+						labelField="IcdCodeName"
+						visible="false" includeInLayout="false"
+						/>
+		</s:HGroup>
+		
+		<s:HGroup verticalAlign="middle"  width="100%" >
+			<s:Label text="Description:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<component1:SearchInput viewModel="{new SearchInputViewModel()}" 
+									searchInputManager="{new SearchInputManagerGeneral(TempDataModel.getInstance().icd9DescList)}"
+									width="100%"
+									/>
+			<s:ComboBox id="id_Description" toolTip="{id_Description.selectedItem ? id_Description.selectedItem.IcdCodeDescription : 'Description'}"
+						prompt="ICD Description" width="225" 
+						labelField="IcdCodeDescription"
+						visible="false" includeInLayout="false"
+						/>
+		</s:HGroup>
+		
+		<s:HGroup verticalAlign="middle" width="100%" >
+			<s:Label text="Active:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ToggleButton id="uiIsActive" toolTip="{uiIsActive.selected ? 'Yes' : 'No'}"
+							skinClass="com.gazuntite.common.view.skin.YesNoToggleButtonSkin"
+							visible="false" includeInLayout="false"
+							/>
+			<s:ToggleSwitch skinClass="com.gazuntite.common.view.skin.ToggleSwitchYesNoSkin"/>
+			<s:Rect width="10"/>
+			<s:Label text="OnSet:" styleName="patientFormLabel"/>
+			<component1:DateInput id="id_Onset" 
+									   prompt="Onset" 
+									   />
+		</s:HGroup>
+		
+	</s:VGroup>
+</s:Group>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" width="119">
+	<fx:Script>
+		<![CDATA[
+			[Bindable]
+			public var label:String;
+			
+			private var _optionLabel:String;
+			private var optionLabelChanged:Boolean;
+			
+			[Bindable]
+			public var tabSelected:Boolean = false;
+			
+			[Bindable]
+			public var dataSelected:Boolean = false;
+			
+			public function onTabSelectionChange(event:Event):void
+			{
+				if (!uiToggleButton.selected)
+				{
+					uiToggleButton.selected = true;
+					//					event.stopImmediatePropagation();
+				}
+				
+				if(id_yes.selected)
+					optionLabel = "form";
+				else if(id_uk.selected)
+					optionLabel = "unKnown";
+				else if(id_no.selected)
+					optionLabel = "noData";
+				else
+					optionLabel = "none";
+			}
+			
+			protected function toggleButton_changeHandler(event:Event):void
+			{
+				var rb:ToggleButton = event.currentTarget as ToggleButton;
+				
+				switch (rb.label)
+				{
+					case "Y":
+					{	
+						id_uk.selected = false;
+						id_no.selected = false;
+						
+						if (!id_yes.selected)
+							optionLabel = "none";
+						else
+							optionLabel = "form";
+						
+						break;
+					}
+					case "U":
+					{
+						id_yes.selected = false;
+						id_no.selected = false;
+						
+						if (!id_uk.selected)
+							optionLabel = "none";
+						else
+							optionLabel = "unKnown";
+						
+						break;
+					}
+					case "N":
+					{
+						id_yes.selected = false;
+						id_uk.selected = false;
+						
+						if (!id_no.selected)
+							optionLabel = "none";
+						else
+							optionLabel = "noData";
+						
+						break;
+					}
+					default:
+					{
+						optionLabel = "none";
+						
+						id_yes.selected = false;
+						id_no.selected = false;
+						id_uk.selected = false;
+						
+						break;
+					}
+				}
+				
+				uiToggleButton.selected = true;
+			}
+			
+			[Bindable]
+			public function get optionLabel():String
+			{
+				return _optionLabel;
+			}
+			
+			public function set optionLabel(value:String):void
+			{
+				_optionLabel = value;
+				
+				optionLabelChanged = true;
+				invalidateProperties();
+			}
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				
+				if (optionLabelChanged)
+				{
+					optionLabelChanged = false;
+					
+					switch (optionLabel)
+					{
+						case "form":
+							
+							id_yes.selected = true;
+							id_uk.selected = false;
+							id_no.selected = false;
+							
+							break;
+						
+						case "unKnown":
+							
+							id_yes.selected = false;
+							id_uk.selected = true;
+							id_no.selected = false;
+							
+							break;
+						
+						case "noData":
+							
+							id_yes.selected = false;
+							id_uk.selected = false;
+							id_no.selected = true;
+							
+							break;
+						
+						case "none":
+							
+							id_yes.selected = false;
+							id_uk.selected = false;
+							id_no.selected = false;
+							
+							break;
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:ToggleButton id="uiToggleButton" 
+					label="{uiToggleButton.selected?label.toUpperCase():label}" 
+					selected="{tabSelected}" change="onTabSelectionChange(event)"
+					left="0" right="0" top="0" bottom="0" skinClass="com.gazuntite.view.patient.component.SideTabButtonSkin"/>
+	<s:SkinnableContainer right="7" verticalCenter="0"
+						  skinClass="com.gazuntite.view.patient.component.SquareRadioButtonContainerSkin"
+						  >
+		<s:layout>
+			<s:HorizontalLayout
+				paddingLeft="1" paddingRight="1" paddingTop="1" paddingBottom="1"
+				gap="2"
+				/>
+		</s:layout>
+		<s:ToggleButton id="id_yes" skinClass="com.gazuntite.view.patient.component.SquareRadioButtonSkin"
+						label="Y" change="toggleButton_changeHandler(event)" selected="false"
+						/>
+		<s:ToggleButton id="id_uk" skinClass="com.gazuntite.view.patient.component.SquareRadioButtonSkin"
+						label="U" change="toggleButton_changeHandler(event)" selected="false"
+						/>
+		<s:ToggleButton id="id_no" skinClass="com.gazuntite.view.patient.component.SquareRadioButtonSkin"
+						label="N" change="toggleButton_changeHandler(event)" selected="false"
+						/>
+	</s:SkinnableContainer>
+</s:Group>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.container.PatientInputSubViewContainerSkin" 
+					  xmlns:supportclass="com.gazuntite.view.patient.supportclass.*" 
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:components="com.gazuntite.components.*" 
+					  xmlns:allergy="com.gazuntite.view.patient.input.history.allergy.*"
+					  xmlns:vitals="com.gazuntite.view.patient.input.physical.vitals.*" 
+					  xmlns:chiefcomplaint="com.gazuntite.view.patient.input.physical.chiefcomplaint.*"
+					  creationComplete="cc()" xmlns:dictation="com.gazuntite.components.dictation.*"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.view.patient.viewmodel.tempmodel.TempModel;
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputPhysicalChiefComplaintViewModel = PatientInputPhysicalChiefComplaintViewModel.getInstance();
+			
+			private function cc():void
+			{
+				addEventListener(PatientInputPhysicalChiefComplaintEvent.PATIENT_INPUT_CHIEF_COMPLAINT_ITEM_EDIT_KEY_UP_EVENT, 
+					chiefComplaintItemEditKeyUpHandler, false, 0, true);
+				addEventListener(PatientInputPhysicalChiefComplaintEvent.PATIENT_INPUT_CHIEF_COMPLAINT_EDIT_EVENT, 
+					manageChiefComplaintHpi, false, 0, true);
+				addEventListener(PatientInputPhysicalChiefComplaintEvent.PATIENT_INPUT_CHIEF_COMPLAINT_DELETE_EVENT, 
+					manageChiefComplaintHpi, false, 0, true);
+			}
+			
+			private function chiefComplaintItemEditKeyUpHandler(event:PatientInputPhysicalChiefComplaintEvent):void
+			{
+				if (!event.searchString)
+					return;
+				
+				if (event.searchString.length < 0 || event.searchString.length > 10)
+					return;
+				
+				if (event.searchString.length % 2 == 0)
+					return;
+				
+				viewModel.loadHpiStaticLists(event.sectionName, event.searchString);
+			}
+			
+			private function chiefComplaintAddHandler(event:PatientInputPhysicalChiefComplaintEvent):void
+			{
+				if (!event.chiefComplaintHpiDTO)
+					return;
+				
+				if (!model.chiefComplaintHpiDTOList)
+					model.chiefComplaintHpiDTOList = new ArrayCollection();
+				
+				model.chiefComplaintHpiDTOList.addItem(event.chiefComplaintHpiDTO);
+				
+				event.chiefComplaintHpiDTO.serialNumber = model.chiefComplaintHpiDTOList.length;
+				
+				viewModel.manageChiefComplaintHpi(QIConstants.HISTORY_VIEW);
+			}
+			
+			private function manageChiefComplaintHpi(event:PatientInputPhysicalChiefComplaintEvent):void
+			{
+				viewModel.manageChiefComplaintHpi(QIConstants.HISTORY_VIEW);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="1" paddingBottom="3"		/>
+	</s:layout>
+	<component:PatientSubViewTitleBar width="100%" label="CHIEF COMPLAINT/HPI" sectionNumber="2" maxSectionCounter="5"  showInputPart="false" showHistoryPart="true" inputCounter="0"
+									  MainSectionLabel="Physical"
+									  dictationNoteViewModel="{viewModel.dictationNoteHistoryViewModel}"/>
+	
+	<dictation:PatientDictationNoteHistoryView width="100%" viewModel="{viewModel.dictationNoteHistoryViewModel}"
+												dictationNoteDataProvider="{model.chiefComplaintDictationNoteHistoryDTOList}"/>
+	<s:Scroller width="100%" height="100%" 
+				horizontalScrollPolicy="off" verticalScrollPolicy="auto" skinClass="com.gazuntite.skins.controls.list.InvisibleScrollerSkin">
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0" />
+			</s:layout>
+			
+			<s:SkinnableContainer width="100%" height="27" skinClass="com.gazuntite.skins.PatientSortBarSkin">
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="10" gap="8"/>
+				</s:layout>
+				
+				<s:Label text="Arrange By:" styleName="emailInboxToolbarTitle" />
+				<s:DropDownList id="uiSort"  
+								selectedIndex="0"
+								buttonMode="true" 
+								toolTip="Sort List"
+								skinClass="com.gazuntite.skins.controls.list.PatientSortBarDropListSkin" 
+								>
+					<s:dataProvider>
+						<s:ArrayCollection>
+							<fx:Object label="Recently Added" />
+							<fx:Object label="Complaint" />
+						</s:ArrayCollection>
+					</s:dataProvider>
+				</s:DropDownList>
+				<s:Spacer width="100%" />
+			</s:SkinnableContainer>
+			
+			<s:List id="uiInboxList"
+					width="100%" 
+					allowMultipleSelection="false"
+					borderVisible="false"
+					dataProvider="{model.chiefComplaintHpiDTOHistoryList}"
+					skinClass="com.gazuntite.skins.controls.list.PatientInputListSkin"
+					itemRenderer="com.gazuntite.view.patient.component.itemrenderer.cchpi.ChiefComplaintItemRenderer"/>
+		</s:Group>
+	</s:Scroller>
+</s:SkinnableContainer>

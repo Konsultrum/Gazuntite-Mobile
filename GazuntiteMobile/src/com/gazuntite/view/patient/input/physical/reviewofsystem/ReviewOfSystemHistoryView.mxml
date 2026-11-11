@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:component="com.gazuntite.view.patient.component.*"
+					  skinClass="com.gazuntite.skins.controls.container.PatientInputSubViewContainerSkin"
+					  creationComplete="cc()" xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.components.reviewofsystem.PatientInputPhysicalReviewOfSystemViewModel;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import spark.events.IndexChangeEvent;
+			
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable] private var viewModel:PatientInputPhysicalReviewOfSystemViewModel = new PatientInputPhysicalReviewOfSystemViewModel();//.getInstance();
+			[Bindable] private var arrCol:ArrayCollection;
+			[Bindable] private var patientSubViewTitle:String;
+			[Bindable] private var dictationNoteViewModel:PatientDictationNoteViewModel;
+			[Bindable] private var dictationNoteDataProvider:ArrayCollection;
+			
+			private var _moduleName:String;
+			[Bindable] public var sectionNumber:String;
+			
+			private function cc():void
+			{
+				arrCol = new ArrayCollection();
+				arrCol.source = [{serialNumber: "1", headerLabel:"General- Avg.Weight [Abnormal]", inDictationNoteMode: false}, 
+							{serialNumber: "2", headerLabel:"Head- Headache [Abnormal]", inDictationNoteMode: false}, 
+							{serialNumber: "3", headerLabel:"Skin- Rash [Normal]", inDictationNoteMode: false}, 
+							{serialNumber: "4", headerLabel:"Complete PE/Chronic [Abnormal]", inDictationNoteMode: false}];
+			}
+			
+			protected function uiSort_changeHandler(event:IndexChangeEvent):void
+			{
+				if(uiSort.selectedIndex == 0)
+					uiSort.toolTip = 'Recently Added';
+				else
+					uiSort.toolTip = 'Category';
+			}
+			
+			public function get moduleName():String
+			{
+				return _moduleName;
+			}
+			
+			public function set moduleName(value:String):void
+			{
+				_moduleName = value;
+				
+				switch (moduleName)
+				{
+					case Constants.REVIEW_OF_SYSTEM_MODULE_NAME:
+						
+						patientSubViewTitle = "REVIEW OF SYSTEM";
+						dictationNoteViewModel = viewModel.rosDictatioNoteHistoryViewModel;
+						dictationNoteDataProvider = model.reviewOfSystemDictationNoteHistoryDTOList;
+						
+						break;
+					
+					case Constants.PHYSICAL_MODULE_NAME:
+						
+						patientSubViewTitle = "PHYSICAL";
+						dictationNoteViewModel = viewModel.physicalDictationNoteHistoryViewModel;
+						dictationNoteDataProvider = model.physicalDictationNoteHistoryDTOList;
+						
+						break;
+				}
+				
+				if (moduleName.length < 0)
+					return;
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="1" paddingBottom="10"/>
+	</s:layout>
+	
+	<component:PatientSubViewTitleBar width="100%" label="{patientSubViewTitle}"   maxSectionCounter="5" sectionNumber="{sectionNumber}" showHistoryPart="true" inputCounter="0" showFlipButton="true"
+									  MainSectionLabel="Physical"
+									  dictationNoteViewModel="{dictationNoteViewModel}" showAllNormalButton="true"/>
+	
+	<dictation:PatientDictationNoteHistoryView width="100%" viewModel="{dictationNoteViewModel}"
+												dictationNoteDataProvider="{dictationNoteDataProvider}"/>
+	
+	<s:Scroller width="100%" height="100%" 
+				horizontalScrollPolicy="off" verticalScrollPolicy="auto" skinClass="com.gazuntite.skins.controls.list.InvisibleScrollerSkin">
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0" />
+			</s:layout>
+			
+			<s:SkinnableContainer width="100%" height="27" skinClass="com.gazuntite.skins.PatientSortBarSkin">
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="10" gap="8"/>
+				</s:layout>
+				
+				<s:Label text="Arrange By:" styleName="emailInboxToolbarTitle" />
+				<s:DropDownList id="uiSort"  
+								selectedIndex="0"
+								buttonMode="true" 
+								toolTip="Recently Added"
+								change="uiSort_changeHandler(event)"
+								skinClass="com.gazuntite.skins.controls.list.PatientSortBarDropListSkin" 
+								>
+					<s:dataProvider>
+						<s:ArrayCollection>
+							<fx:Object label="Recently Added" />
+							<fx:Object label="Category" />
+						</s:ArrayCollection>
+					</s:dataProvider>
+				</s:DropDownList>
+				<s:Spacer width="100%" />
+			</s:SkinnableContainer>
+			
+			<s:List id="uiReviewOfSystemList"
+					width="100%" allowMultipleSelection="false"
+					dataProvider="{arrCol}"
+					borderVisible="false" skinClass="com.gazuntite.skins.controls.list.PatientInputListSkin"
+					itemRenderer="com.gazuntite.common.view.components.reviewofsystem.renderers.ReviewOfSystemListIR"/>
+		</s:Group>
+	</s:Scroller>
+</s:SkinnableContainer>

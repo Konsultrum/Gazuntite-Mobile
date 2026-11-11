@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin" 
+					  xmlns:components="com.gazuntite.controls.extended.components.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.diagnosis.DiagnosisDTO;
+			import com.gazuntite.common.dto.assessment.diagnosis.ICDCodeDTO;
+			import com.gazuntite.common.util.ValidationUtils;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.patient.visit.view.pmh.alergies.AlergiesPanel;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.diagnosis.PatientInputAssessmentDiagnosisEvent;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]	
+			public var labelWidth:Number = 100;
+			
+			private var _diagnosisDTO:DiagnosisDTO;
+			private var toolTipChanged:Boolean;
+			
+			[Bindable]
+			public function get diagnosisDTO():DiagnosisDTO
+			{
+				return _diagnosisDTO;
+			}
+
+			public function set diagnosisDTO(value:DiagnosisDTO):void
+			{
+				_diagnosisDTO = value;
+				
+				if (!diagnosisDTO)
+					return;
+				
+				if (diagnosisDTO.IcdDto)
+				{
+					id_DiagnosisCmbo.textInput.text = diagnosisDTO.IcdDto.IcdCodeDescription;
+					id_IcdCodeCmbo.textInput.text = diagnosisDTO.IcdDto.IcdCodeName;
+				}
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.DOWN || event.keyCode == Keyboard.UP)
+					return;
+				
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+					PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				
+				dispatchEvent(ev);
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar.id == "id_IcdCodeCmbo")
+				{
+					id_DiagnosisCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				else
+				{
+					id_IcdCodeCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				
+				if (curTar.selectedIndex < 0)
+				{
+					id_IcdCodeCmbo.textInput.text = "";
+					id_DiagnosisCmbo.textInput.text = "";
+				}
+				
+				changeRequiredFieldIcons(curTar);
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function changeRequiredFieldIcons(comboBox:ComboBox):void
+			{
+				if (comboBox.selectedIndex >= 0)
+				{
+					img_IcdCode.source = QIConstants.IMG_GREEN;
+					img_Diagnosis.source = QIConstants.IMG_GREEN;
+				}
+				else
+				{
+					img_IcdCode.source = QIConstants.IMG_RED;
+					img_Diagnosis.source = QIConstants.IMG_RED;
+				}
+			}
+			
+			private function addClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				if (!diagnosisDTO)
+					return;
+				
+				diagnosisDTO.IsDirty = true;
+				diagnosisDTO.OnSet = id_OnSet.text;
+				diagnosisDTO.IcdDto = id_IcdCodeCmbo.selectedItem as ICDCodeDTO;
+				diagnosisDTO.IsChronic = id_Chronic.selected;
+				diagnosisDTO.IsActive = id_Active.selected;
+				
+				diagnosisDTO.ModifiedBy = model.LoggedInUserId;
+				diagnosisDTO.ModifiedAt = new Date();
+				
+				if (diagnosisDTO.showActiveField)
+					diagnosisDTO.ResolvedDate = id_ResolvedDate.text;
+
+				var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+							PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_EDIT_EVENT, true);
+				
+				ev.diagnosisDTO = diagnosisDTO;
+				
+				dispatchEvent(ev);
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_OnSet.text.length < 1)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select OnSet Date\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_OnSet;
+				}
+				
+				if (isInvalidICDCode())
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select ICD Code\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_IcdCodeCmbo;
+				}
+				
+				if (isInvalidDiagnosis())
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Diagnosis\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_DiagnosisCmbo;
+				}
+				
+				if (diagnosisDTO.showActiveField && !id_Active.selected)
+				{
+					if (!ValidationUtils.isValidDateText(id_ResolvedDate.text))
+					{
+						isNotValid = true;
+						
+						errorStr += "Please select Resolved Date\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_ResolvedDate;
+					}
+				}
+				if (errorStr.length > 0)
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				
+				return isNotValid;
+			}
+			
+			private function isInvalidICDCode():Boolean
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_IcdCodeCmbo.selectedIndex < 0)
+				{
+					if (!id_IcdCodeCmbo.selectedItem)
+					{
+						isNotValid = true;
+					}
+					else
+					{
+						var icdCode:ICDCodeDTO = id_IcdCodeCmbo.selectedItem as ICDCodeDTO;
+						
+						if (!icdCode)
+						{
+							isNotValid = true;
+						}
+					}
+				}
+				
+				return isNotValid;
+			}
+			
+			private function isInvalidDiagnosis():Boolean
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_DiagnosisCmbo.selectedIndex < 0)
+				{
+					if (!id_DiagnosisCmbo.selectedItem)
+					{
+						isNotValid = true;
+					}
+					else
+					{
+						var diagnosis:ICDCodeDTO = id_DiagnosisCmbo.selectedItem as ICDCodeDTO;
+						
+						if (!diagnosis)
+						{
+							isNotValid = true;
+						}
+					}
+				}
+				
+				return isNotValid;
+			}
+			
+			private function activeChangeHandler(event:Event):void
+			{
+				if (!id_Active.selected)
+				{
+					Alert.show("Are you sure want to resolve diagnosis?", "Confirmation", Alert.YES|Alert.NO, FlexGlobals.topLevelApplication.mainContainer, 
+						function(event:CloseEvent):void
+						{
+							switch (event.detail)
+							{
+								case Alert.NO:
+								{
+									id_Active.selected = true;
+									
+									break;
+								}
+									
+								default:
+								{
+									break;
+								}
+							}
+						});
+				}
+			}
+			
+			private function getFormattedVisitDate(value:DiagnosisDTO):String
+			{
+				if (!value)
+					return "";
+				
+				var formattedDate:String = "";
+				
+				formattedDate = UtilityFunctions.FormatDate(value.VisitDate, 'MM/DD/YYYY');
+				
+				return formattedDate;
+			}
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				
+				if (toolTipChanged)
+				{
+					toolTipChanged = false;
+					
+					if (id_IcdCodeCmbo.textInput.text.length)
+					{
+						id_IcdCodeCmbo.toolTip = id_IcdCodeCmbo.textInput.text;
+					}
+					else
+					{
+						id_IcdCodeCmbo.toolTip = "ICD Code";
+					}
+					
+					if (id_DiagnosisCmbo.textInput.text.length)
+					{
+						id_DiagnosisCmbo.toolTip = id_DiagnosisCmbo.textInput.text;
+					}
+					else
+					{
+						id_DiagnosisCmbo.toolTip = "Diagnosis";
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingTop="8" paddingBottom="8"/>
+	</s:layout>
+
+	<s:HGroup width="100%" verticalAlign="middle" height="21">
+		<s:Spacer width="11"/>
+		<s:Label text="Visit Date:" width="{labelWidth}" styleName="patientFormLabel"/>
+		<s:Label text="{getFormattedVisitDate(diagnosisDTO)}"
+				 toolTip="{getFormattedVisitDate(diagnosisDTO)}" fontFamily="CalibriCFF"/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:BitmapImage id="img_IcdCode" source="{QIConstants.IMG_GREEN}"/>
+			<s:Label text="ICD Code" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_IcdCodeCmbo" width="100%" prompt="ICD Code" toolTip="ICD Code"
+						selectedItem="{diagnosisDTO.IcdDto}"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+						dataProvider="{model.icdCodeDTOList}" labelField="IcdCodeName"
+						keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:BitmapImage id="img_Diagnosis" source="{QIConstants.IMG_GREEN}"/>
+			<s:Label text="Diagnosis:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_DiagnosisCmbo" width="100%" prompt="Diagnosis" toolTip="Diagnosis"
+						selectedItem="{diagnosisDTO.IcdDto}"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+						dataProvider="{model.icdCodeDTOList}" labelField="IcdCodeDescription"
+						keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:BitmapImage id="img_OnSet" source="{id_OnSet.text.length > 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="OnSet:" width="{labelWidth}" styleName="patientFormLabel" />
+			<components:LabelDateField id="id_OnSet" text="{diagnosisDTO.OnSet}" toolTip="{id_OnSet.text}" width="100%" height="20" 
+									   yearNavigationEnabled="true" editable="false" IsEditAllow="false"  maxYear="{new Date().getFullYear()}" minYear="1901"
+									   prompt="OnSet"
+									   selectableRange="{{rangeEnd : new Date()}}" layoutDirection="rtl"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Chronic:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ToggleButton id="id_Chronic" buttonMode="true"
+							skinClass="com.gazuntite.view.patient.component.YesNoToggleButtonSkin"
+							toolTip="{id_Chronic.selected ? 'Yes' : 'No'}"
+							selected="{diagnosisDTO.IsChronic}"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" visible="{diagnosisDTO.showActiveField}" includeInLayout="{diagnosisDTO.showActiveField}">
+		<s:HGroup width="100%" height="21" verticalAlign="middle">
+			<s:Spacer width="11"/>
+			<s:Label text="Active:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ToggleButton id="id_Active" buttonMode="true"
+							skinClass="com.gazuntite.view.patient.component.YesNoToggleButtonSkin"
+							toolTip="{id_Active.selected ? 'Yes' : 'No'}"
+							selected="{diagnosisDTO.IsActive}" 
+							change="activeChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="21" verticalAlign="middle" visible="{!id_Active.selected}" includeInLayout="{!id_Active.selected}">
+			<s:Spacer width="11"/>
+			<s:Label text="Resolved Date:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<components:LabelDateField id="id_ResolvedDate" prompt="Resolved Date" width="120" height="21"
+									   text="{diagnosisDTO.ResolvedDate}" toolTip="{id_ResolvedDate.text}"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" horizontalAlign="right">
+		<s:Button id="id_Add" buttonMode="true" toolTip="Save" 
+				  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+				  click="addClickHandler()"/>
+	</s:HGroup>
+</s:SkinnableContainer>

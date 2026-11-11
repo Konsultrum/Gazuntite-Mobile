@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="onCreated(event)"
+		 width="400" height="300" xmlns:reviewofsystem="com.gazuntite.common.view.components.reviewofsystem.*"
+		 resize="onResize(event)" xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.components.reviewofsystem.skin.ROS_GeneralBlue_TB;
+			import com.gazuntite.common.view.components.reviewofsystem.skin.RoS_GeneralTB;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			/* [Bindable]
+			public var heentItemList:ArrayCollection; */
+			
+			private var m_oModel:Object;
+			
+			[Bindable]
+			public var selectedItem:Object;
+			
+			[Bindable]
+			public var selectedItemRow:int = 0;
+			
+			[Bindable]
+			public var listItemHeight:int = 28;
+			
+			[Bindable]
+			public var tabWidth:Number = 110;
+			
+			[Bindable]
+			protected var viewModel:PatientInputPhysicalReviewOfSystemViewModel = PatientInputPhysicalReviewOfSystemViewModel.getInstance();
+			
+			[Bindable]
+			protected var selectedInnerItemRow:int = 0;
+			
+			[Bindable]
+			protected var selectedInnerItemColumn:int = 0;
+			
+			[Bindable]
+			protected var listInnerItemHeight:int = 27;
+			
+			[Bindable]
+			protected var listInnerItemWidth:int = 100;
+			
+			[Bindable]
+			protected var listItemWidth:int = 100;
+			
+			[Bindable]
+			protected var selectedItemColumn:int = 0;
+			
+			protected var selectedPage:int = 0;
+			
+			
+			
+			[Bindable]
+			public function get model():Object
+			{
+				return m_oModel;
+			}
+
+			public function set model(value:Object):void
+			{
+				m_oModel = value;
+				scrollToPage(0);
+			}
+
+			protected function onItemSelected(event:Event):void
+			{
+				selectedItem = uiList.selectedItem;
+				if (uiList.selectedIndex!=0)
+				{
+					var list:ArrayCollection = uiList.dataProvider as ArrayCollection;
+					list.removeItemAt(uiList.selectedIndex);
+					list.addItemAt(selectedItem, 0);
+					uiList.selectedIndex = 0;
+				}
+				viewModel.showRosItemViewHeentDetailLevel = true;
+				
+			}
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+				scrollToPage(0);
+			}
+			protected function scrollToPage(newPage:Number):void
+			{
+				if ( null == model || null == model.children )//heentItemList==null)
+				{
+					return;
+				}
+				var item_height:Number = listItemHeight;
+				var total_items:int = model.children.length; //heentItemList.length;
+				var item_per_page:int = Math.ceil(uiListContainer.height/item_height);
+				var total_pages:int = Math.ceil(total_items/item_per_page);
+				
+				if (newPage<0 || newPage>=total_pages)
+				{
+					return;
+				}
+				viewModel.showRosItemViewHeentDetailLevel = false;
+				viewModel.rosHeentSelectedItemIndex=-1;
+				
+				selectedPage = newPage;
+				var scroll_to_item:int = newPage*item_per_page;
+				var scroll_pos:int = scroll_to_item*item_height;
+				//				uiListContainer.verticalScrollPosition = scroll_pos;
+				uiScrollAnimatePath.valueTo = scroll_pos;
+				uiScrollAnimate.play();
+				//				uiPageLabel.text = (newPage+1).toString()+'/'+total_pages.toString();
+				
+				
+			}
+			
+			protected function onResize(event:ResizeEvent):void
+			{
+				viewModel.heentListItemWidth = (this.width - tabWidth) /5;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Animate id="uiScrollAnimate" target="{uiListContainer}" duration="300">
+			<s:motionPaths>
+				<s:SimpleMotionPath id="uiScrollAnimatePath" property="verticalScrollPosition" />
+			</s:motionPaths>
+			
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:DropShadowFilter alpha="0.75" angle="45.0" blurX="4.0"
+							blurY="4.0" color="#000000" distance="2" hideObject="false"
+							inner="false" knockout="false" quality="3" strength="1"/>
+	</s:filters>
+	<s:Group
+		x="0" y="{selectedItemRow*listItemHeight+26}"
+		>
+		<s:ToggleButton label="{model.label}" width="100%" height="100%"
+						skinClass="{!viewModel.showRosItemViewHeentDetailLevel ? ROS_GeneralBlue_TB : RoS_GeneralTB}"
+						selected="@{viewModel.showRosItemViewHeentLevel}"
+						change="viewModel.rosSelectedItemIndex=-1"
+						buttonMode="true"
+						/>
+		<s:ToggleButton right="25" verticalCenter="0"
+						skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+						buttonMode="true" toolTip="Normal"
+						/>	
+	</s:Group>
+	
+	<s:BorderContainer id="uiPanel" 
+					   left="{tabWidth}" top="0" right="0" bottom="0" cornerRadius="3" 
+					   backgroundColor="{id_upArrow.visible ? 0x83A3FE : 0xA9AFB6}" borderVisible="false"
+					   >
+		<!--		<s:ToggleButton id="uiAllNormal" right="4" top="3" width="94" height="22"
+		skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.AllNormalTB1"/>
+		-->		<s:HGroup id="uiListContainer" 
+						  height="100%" clipAndEnableScrolling="true" 
+						  left="4" top="2" bottom="2" horizontalAlign="center" 
+						  paddingTop="4" paddingBottom="0" paddingLeft="0">
+					<!-- heentItemList-->
+					<s:List id="uiList" width="100%" contentBackgroundAlpha="0"
+							dataProvider="{model.children}"
+							itemRenderer="com.gazuntite.common.view.components.reviewofsystem.renderers.ReviewOfSystemHeentItemRenderer"
+							selectedIndex="{viewModel.rosHeentSelectedItemIndex}"
+							click="onItemSelected(event)" borderVisible="false"
+							>
+						<s:layout>
+							<s:HorizontalLayout gap="0"/>
+						</s:layout>
+					</s:List>			
+					<!--			
+					<s:Button label="^" click="scrollToPage(selectedPage-1)" width="{uiList.width}"/>
+					<s:Label id="uiPageLabel"/>
+					<s:Button label="v" click="scrollToPage(selectedPage+1)" width="{uiList.width}"/>
+				-->		</s:HGroup>
+	</s:BorderContainer>
+	
+	<!--	<reviewofsystem:ReviewOfSystemHeentItemDetailView
+	top="2" bottom="2" right="2" 
+	left="{tabWidth+listItemWidth*(selectedItemColumn)}"
+	model="{selectedItem}"
+	selectedItemRow="{selectedInnerItemRow}"
+	listItemHeight="{listItemHeight}"
+	visible="{viewModel.showRosItemViewHeentDetailLevel}"
+	includeInLayout="{viewModel.showRosItemViewHeentDetailLevel}"
+	/>
+	-->
+	<reviewofsystem:ReviewOfSystemHeentItemDetailView
+		model="{selectedItem}"
+		left="{tabWidth}" right="4" top="40" bottom="4"  
+		visible="{viewModel.showRosItemViewHeentDetailLevel}"
+		includeInLayout="{viewModel.showRosItemViewHeentDetailLevel}"
+		/>
+	
+	<s:Group id="id_upArrow" left="101" right="0" height="100%" visible="{!viewModel.showRosItemViewHeentDetailLevel}" includeInLayout="{!viewModel.showRosItemViewHeentDetailLevel}">
+		<dictation:PleaseSelectUpView label="Select any item for input" horizontalCenter="0" verticalCenter="0" width="90%"/>
+	</s:Group>
+	
+</s:Group>

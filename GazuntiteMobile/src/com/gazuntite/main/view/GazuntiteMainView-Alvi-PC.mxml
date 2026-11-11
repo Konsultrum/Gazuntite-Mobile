@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:view="com.gazuntite.topbar.view.*" 
+		 xmlns:view1="com.gazuntite.temp.view.*" 
+		 xmlns:view2="com.gazuntite.input.main.view.*"
+		 xmlns:view3="com.gazuntite.main.exambar.view.*" 
+		 xmlns:view4="com.gazuntite.login.view.*" 
+		 creationComplete="onCreated(event)" xmlns:view5="com.gazuntite.practicemanagerbar.view.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager;
+			
+			import mx.events.FlexEvent;
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+				MainLayoutManager.getInstance().initialize(this, uiLogin, uiTopView, uiPatientInput, uiPatientHistory);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout gap="0" horizontalAlign="left" paddingBottom="50"/>
+	</s:layout> 
+	<view:TopBar width="100%"/>
+	<view:TopBarViewNavigator id="uiTopView" width="100%" height="50%"/>
+	<view3:PatientExamBar width="100%"/>
+	<s:Spacer height="4"/>
+	<view1:PatientHistoryPlaceHolder id="uiPatientHistory" width="100%" height="50%"/>
+	<view2:PatientInputMain id="uiPatientInput" width="100%" height="50%"/>
+	<view5:PracticeManagerBar includeInLayout="false" x="0" y="{this.height-60}" width="{this.width}" height="60"/>
+	
+	<view4:LoginView id="uiLogin" width="{width}" height="{height}" includeInLayout="false"/>
+</s:Group>

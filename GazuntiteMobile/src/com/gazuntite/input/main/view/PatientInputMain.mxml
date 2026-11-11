@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:navigation="com.gazuntite.common.view.navigation.*" 
+		 xmlns:view="com.gazuntite.input.main.view.*"
+		 skinClass="com.gazuntite.input.main.view.PatientInputMainSkin"
+		 backgroundAlpha="0"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfoItem;
+			import com.gazuntite.common.viewmodel.navigation.ViewFactory;
+			import com.gazuntite.input.main.viewmodel.PatientInputNavigationInfo;
+			import com.gazuntite.input.main.viewmodel.PatientInputViewModel;
+			
+			import mx.events.FlexEvent;
+			
+			import spark.transitions.CrossFadeViewTransition;
+			import spark.transitions.FlipViewTransition;
+			
+			[Bindable]
+			public var inputNav:PatientInputNavigationInfo = PatientInputViewModel.getInstance().navigationInfo;
+			
+			protected function onNavigatorCreated(event:FlexEvent):void
+			{
+				var fade:CrossFadeViewTransition = new CrossFadeViewTransition();
+				var next_view:Class = ViewFactory.getViewClass(inputNav.currentSubNavItem.viewId);
+				uiInput.pushView(next_view, inputNav.currentSubNavItem, inputNav, fade);
+			}
+			protected function set jumpToSubItem(item:NavigationInfoItem):void
+			{
+				if (item == null)
+				{
+					return;
+				}
+				inputNav.currentSubNavItem = item;
+				uiInput.popAll();
+				var effect:FlipViewTransition = new FlipViewTransition();
+				var next_view:Class = ViewFactory.getViewClass(inputNav.currentSubNavItem.viewId);
+				uiInput.pushView(next_view, inputNav.currentSubNavItem, inputNav, effect);
+			}
+			 
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<fx:Binding source="{inputNav.jumpToSubItem}" destination="jumpToSubItem"/>
+	<view:PatientInputTitleBar id="uiTitleBar" top="0" left="0" right="0"/>
+	<s:ViewNavigator 
+		id="uiInput"
+		left="10" right="{uiSoapBar.width+10}" top="{uiTitleBar.x+uiTitleBar.height+20}" bottom="10"
+		creationComplete="onNavigatorCreated(event)"
+		/>
+	<view:SoapBar
+		id="uiSoapBar"
+		top="{uiTitleBar.x+uiTitleBar.height+14}" bottom="0" width="23" right="0"
+		/>
+</s:SkinnableContainer>

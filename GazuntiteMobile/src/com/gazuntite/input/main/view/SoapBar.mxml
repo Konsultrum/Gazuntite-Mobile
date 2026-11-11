@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  skinClass="com.gazuntite.input.main.view.SoapBarSkin"
+					  >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout gap="10" verticalAlign="middle" horizontalAlign="right"/>
+	</s:layout>
+	
+	<s:ToggleButton id="id_showBilling"
+					skinClass="com.gazuntite.input.main.view.ShowBillingTBSkin" 
+					toolTip="{id_showBilling.selected ? 'Collapse Billing': 'Expand Billing'}"
+					buttonMode="true" useHandCursor="true"
+					label="${123.0}"
+					/>
+	<s:ToggleButton id="id_showGuide"
+					skinClass="com.gazuntite.input.main.view.ShowGuideTBSkin" 
+					toolTip="{id_showGuide.selected ? 'Collapse Guide': 'Expand Guide'}"
+					buttonMode="true" useHandCursor="true"
+					label="GUIDE"
+					/>
+	<s:ToggleButton id="id_showSoapnote"
+					skinClass="com.gazuntite.input.main.view.ShowSoapnoteTBSkin" 
+					toolTip="{id_showSoapnote.selected ? 'Collapse Soapnote': 'Expand Soapnote'}"
+					buttonMode="true" useHandCursor="true"
+					/>
+	
+
+</s:SkinnableContainer>

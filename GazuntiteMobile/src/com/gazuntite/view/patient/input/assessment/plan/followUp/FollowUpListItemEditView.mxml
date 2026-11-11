@@ -1,0 +1,1051 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin" xmlns:components="com.gazuntite.controls.extended.components.*"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.followUp.FollowUpDTO;
+			import com.gazuntite.common.dto.assessment.followUp.FollowUpServiceTypeDTO;
+			import com.gazuntite.common.dto.baseDTO.GeneralTypeDTO;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.patient.visit.utils.QIUtilityFunctions;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.ItemClickEvent;
+			
+			import org.osmf.net.SwitchingRuleBase;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var followUpTypeDp:ArrayCollection = new ArrayCollection(["Date", "Upon Completion of"]);
+			
+			[Bindable]
+			private var uponCompletionOfDp:ArrayCollection = new ArrayCollection(["Lab Test", "Drug"]);
+			
+			[Bindable]
+			private var followUpMethodDp:ArrayCollection = new ArrayCollection(["Office", "Phone", "Email", "Chat", "Video"]);
+			
+			[Bindable]
+			private var followUpNatureDp:ArrayCollection = new ArrayCollection(["Acute", "Chronic", "Preventive"]);
+			
+			[Bindable]
+			private var followUpFrequencyDp:ArrayCollection = new ArrayCollection(["Age", "Duration"]);
+			
+			[Bindable]
+			private var labelWidth:int = 100;
+			
+			[Bindable]
+			private var rightLabelWidth:int = 120;
+			
+			private var _followUpDTO:FollowUpDTO;
+			private var tooltipChanged:Boolean;
+			
+			[Bindable]
+			public function get followUpDTO():FollowUpDTO
+			{
+				return _followUpDTO;
+			}
+			
+			public function set followUpDTO(value:FollowUpDTO):void
+			{
+				_followUpDTO = value;
+				
+				bindFollowUp();
+				
+				tooltipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var ev:PatientInputAssessmentFollowUpEvent = new PatientInputAssessmentFollowUpEvent(
+					PatientInputAssessmentFollowUpEvent.PATIENT_INPUT_FOLLOW_UP_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				
+				if (curTar.id == "id_Date")
+				{
+					ev.followUpDataControlTypeID = QIConstants.FOLLOW_UP_DATE; //date ID is 2 for date dictionaries
+					dispatchEvent(ev);
+				}
+				else if (curTar.id == "id_Service")
+				{
+					ev.followUpDataControlTypeID = QIConstants.FOLLOW_UP_SERVICE;//service ID is 1 for service dictionaries
+					dispatchEvent(ev);
+				}
+				
+				tooltipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar == id_Date || curTar == id_Service)
+				{
+					if (curTar.selectedIndex > 0 && curTar.selectedIndex < curTar.dataProvider.length)
+					{
+						var service:FollowUpServiceTypeDTO = curTar.dataProvider[curTar.selectedIndex] as FollowUpServiceTypeDTO;
+						
+						curTar.textInput.text = service.followUpService;	
+					}
+				}
+				
+				else if (curTar == uponCompletionOfValue || curTar == id_AgeType || curTar == id_AgeValue ||
+						curTar == id_AfterDurationType || curTar == id_ForDurationType)
+				{
+					if (curTar.selectedIndex > 0 && curTar.selectedIndex < curTar.dataProvider.length)
+					{
+						var dto:GeneralTypeDTO = curTar.dataProvider[curTar.selectedIndex] as GeneralTypeDTO;
+						
+						curTar.textInput.text = dto.Name;
+					}
+				}
+				
+				else
+				{
+					if (curTar.selectedIndex > 0 && curTar.selectedIndex < curTar.dataProvider.length)
+					{
+						curTar.textInput.text = curTar.dataProvider[curTar.selectedIndex] as String;
+					}
+				}
+				
+				tooltipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function uponCompletionOfValueChangeHandler():void
+			{
+				switch (uponCompletionOfType.selectedIndex)
+				{
+					case 0:
+						
+						uponCompletionOfValue.enabled = true;
+						uponCompletionOfValue.dataProvider = model.followUpLabsList;
+						
+						uponCompletionOfType.toolTip = "Lab Test";
+						
+						break;
+					
+					case 1:
+						
+						uponCompletionOfValue.enabled = true;
+						uponCompletionOfValue.dataProvider = model.followUpPatientMedicationlist;
+						
+						uponCompletionOfType.toolTip = "Drugs";
+						
+						break;
+					
+					default:
+						
+						uponCompletionOfValue.enabled = false;
+						uponCompletionOfValue.selectedItem = null;
+						uponCompletionOfValue.textInput.text = "";
+						uponCompletionOfValue.toolTip = uponCompletionOfValue.textInput.text;
+						
+						uponCompletionOfType.toolTip = uponCompletionOfType.textInput.text;
+						
+						break;
+				}
+			}
+			
+			private function prnChangeHandler():void
+			{
+				if (id_PRN.selected)
+				{
+					id_FollowUpFrequencyCmbo.selectedIndex = -1;
+					id_FollowUpFrequencyCmbo.textInput.text = "";
+				}
+				
+				id_FollowUpFrequencyCmbo.enabled = !id_PRN.selected;
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				if (isInvalid())
+					return;
+				
+				setFollowUpDate();
+				setFollowUpNature();
+				setFollowUPServiceType();
+				setFollowUpMethodType();
+				setFollowUpFrequency();
+				
+				followUpDTO.ModifiedBy = model.LoggedInUserId;
+				followUpDTO.ModifiedAt = new Date();
+				
+				followUpDTO.DictationID = QIConstants.GUID_FORMAT;
+				followUpDTO.ClinicBranchId = model.LoggedInUserSelectedBranchId;
+				
+				followUpDTO.IsDirty = true;
+				
+				var ev:PatientInputAssessmentFollowUpEvent = new PatientInputAssessmentFollowUpEvent(
+					PatientInputAssessmentFollowUpEvent.PATIENT_INPUT_FOLLOW_UP_EDIT_EVENT, true);
+				
+				ev.followUpDTO = followUpDTO;
+				
+				dispatchEvent(ev);
+			}
+			
+			private function setFollowUpDate():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				switch (id_followUpTypeCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsByDate = true;
+						followUpDTO.IsOnCompletion = false;
+						followUpDTO.FollowUpDate = id_Date.textInput.text;	
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.IsOnCompletion = true;
+						followUpDTO.IsByDate = false;
+						
+						if (uponCompletionOfType.selectedIndex == 0)
+						{
+							followUpDTO.LabTest = uponCompletionOfValue.selectedItem as GeneralTypeDTO;
+							followUpDTO.IsLabTestSelected = true;
+							followUpDTO.IsDrugselected = false;
+						}
+						else
+						{
+							followUpDTO.LabTest.ID = -1;
+						}
+						
+						if (uponCompletionOfType.selectedIndex == 1)
+						{
+							followUpDTO.Drug = uponCompletionOfValue.selectedItem as GeneralTypeDTO;
+							followUpDTO.IsDrugselected = true;
+							followUpDTO.IsLabTestSelected = false;
+						}
+						else
+						{
+							followUpDTO.Drug.ID = -1;
+						} 
+						
+						break;	
+				}
+			}
+			
+			private function setFollowUpNature():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				switch (id_FollowUpNatureCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsAcute = true;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = true;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+					
+					case 2:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = true;
+						
+						break;
+					
+					default:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+				}
+			}
+			
+			private function setFollowUpMethodType():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				if (!followUpDTO.FollowUpMethodType)
+					followUpDTO.FollowUpMethodType = new GeneralTypeDTO();
+				
+				switch (id_FollowUpMethodCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+							QIConstants.OFFICE_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+							QIConstants.PHONE_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 2:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+							QIConstants.EMAIL_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 3:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+							QIConstants.CHAT_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 4:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+							QIConstants.VIDEO_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+				}
+			}
+			
+			private function bindFollowUp():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				if (followUpDTO.IsByDate)
+				{
+					id_followUpTypeCmbo.selectedIndex = 0;
+					id_followUpTypeCmbo.textInput.text = "Date";
+					
+					id_Date.textInput.text = followUpDTO.FollowUpDate;
+				}
+				else if (followUpDTO.IsOnCompletion)
+				{
+					id_followUpTypeCmbo.selectedIndex = 1;
+					id_followUpTypeCmbo.textInput.text = "Upon Completion Of";
+					
+					if (followUpDTO.IsLabTestSelected)
+					{
+						uponCompletionOfType.selectedIndex = 0;
+						uponCompletionOfType.textInput.text = "Lab Test";
+						
+						uponCompletionOfValue.selectedItem = followUpDTO.LabTest;
+						uponCompletionOfValue.textInput.text = followUpDTO.LabTest.Name;
+						
+						uponCompletionOfValue.dataProvider = model.followUpLabsList;
+					}
+					else if (followUpDTO.IsDrugselected)
+					{
+						uponCompletionOfType.selectedIndex = 1;
+						uponCompletionOfType.textInput.text = "Drugs";
+						
+						uponCompletionOfValue.selectedItem = followUpDTO.Drug;
+						uponCompletionOfValue.textInput.text = followUpDTO.Drug.Name;
+						
+						uponCompletionOfValue.dataProvider = model.followUpPatientMedicationlist;
+					}
+				}
+				
+				if (followUpDTO.IsAcute)
+				{
+					id_FollowUpNatureCmbo.selectedIndex = 0;
+				}
+				else if (followUpDTO.IsChronic)
+				{
+					id_FollowUpNatureCmbo.selectedIndex = 1;
+				}
+				
+				else if (followUpDTO.IsPreventive)
+				{
+					id_FollowUpNatureCmbo.selectedIndex = 2;
+				}
+				
+				id_FollowUpNatureCmbo.textInput.text = id_FollowUpNatureCmbo.dataProvider[id_FollowUpNatureCmbo.selectedIndex];
+				
+				id_Service.selectedItem = followUpDTO.ServiceTypeDTO;
+				
+				if (followUpDTO.ServiceTypeDTO)
+					id_Service.textInput.text = followUpDTO.ServiceTypeDTO.followUpService;
+				
+				if (followUpDTO.FollowUpMethodType)
+				{
+					switch (followUpDTO.FollowUpMethodType.Name)
+					{
+						case QIConstants.OFFICE_FOLLOWUP_METHOD_NAME:
+							
+							id_FollowUpMethodCmbo.selectedIndex = 0;
+							
+							break;
+						
+						case QIConstants.PHONE_FOLLOWUP_METHOD_NAME:
+							
+							id_FollowUpMethodCmbo.selectedIndex = 1;
+							
+							break;
+						
+						case QIConstants.EMAIL_FOLLOWUP_METHOD_NAME:
+							
+							id_FollowUpMethodCmbo.selectedIndex = 2;
+							
+							break;
+						
+						case QIConstants.CHAT_FOLLOWUP_METHOD_NAME:
+							
+							id_FollowUpMethodCmbo.selectedIndex = 3;
+							
+							break;
+						
+						case QIConstants.VIDEO_FOLLOWUP_METHOD_NAME:
+							
+							id_FollowUpMethodCmbo.selectedIndex = 4;
+							
+							break;
+					}
+					
+					id_FollowUpMethodCmbo.textInput.text = id_FollowUpMethodCmbo.dataProvider[id_FollowUpMethodCmbo.selectedIndex];
+				}
+				
+				id_PRN.selected = followUpDTO.IsPRN;
+				
+				if (id_PRN.selected)
+				{
+					id_FollowUpFrequencyCmbo.selectedIndex = -1;
+					id_FollowUpFrequencyCmbo.textInput.text = "";
+				}
+				
+				else if (followUpDTO.IsAgeSelected)
+				{
+					id_FollowUpFrequencyCmbo.selectedIndex = 0;
+					
+					id_AgeType.selectedItem = followUpDTO.AgeType;
+					
+					if (followUpDTO.AgeType)
+						id_AgeType.textInput.text = followUpDTO.AgeType.Name;
+					
+					id_AgeValue.selectedItem = followUpDTO.AgeValueType;
+					
+					if (followUpDTO.AgeValueType)
+						id_AgeValue.textInput.text = followUpDTO.AgeValueType.Name;
+				}
+					
+				else if (followUpDTO.IsDurationSelected)
+				{
+					id_FollowUpFrequencyCmbo.selectedIndex = 1;
+					
+					id_AfterDurationValue.text = followUpDTO.AfterDurationValue.toString();
+					id_AfterDurationType.selectedItem = followUpDTO.AfterInstructionDurationTypeDTO;
+					
+					if (followUpDTO.AfterInstructionDurationTypeDTO)
+						id_AfterDurationType.textInput.text = followUpDTO.AfterInstructionDurationTypeDTO.Name;
+					
+					id_ForDurationValue.text = followUpDTO.ForDurationValue.toString();
+					id_ForDurationType.selectedItem = followUpDTO.ForInstructionDurationTypeDTO;
+					
+					if (followUpDTO.ForInstructionDurationTypeDTO)
+						id_ForDurationType.textInput.text = followUpDTO.ForInstructionDurationTypeDTO.Name;
+				}
+				
+				id_FollowUpFrequencyCmbo.enabled = !id_PRN.selected;	
+			}
+			
+			private function setFollowUPServiceType():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				var serviceDTO:FollowUpServiceTypeDTO;
+				
+				if (id_Service.textInput.text.length > 0)
+				{
+					serviceDTO = id_Service.selectedItem as FollowUpServiceTypeDTO;
+				}
+				
+				if (serviceDTO)
+				{
+					followUpDTO.ServiceTypeDTO = serviceDTO;
+				}
+				else
+				{
+					followUpDTO.ServiceTypeDTO = new FollowUpServiceTypeDTO();
+					followUpDTO.ServiceTypeDTO.followUpService = id_Service.textInput.text;
+				}
+			}
+			
+			private function setFollowUpFrequency():void
+			{
+				if (!followUpDTO)
+					return;
+				
+				followUpDTO.IsPRN = id_PRN.selected;
+				
+				switch (id_FollowUpFrequencyCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsAgeSelected = true;
+						followUpDTO.IsDurationSelected = false;
+						
+						followUpDTO.AgeType = id_AgeType.selectedItem as GeneralTypeDTO;
+						followUpDTO.AgeValueType = id_AgeValue.selectedItem as GeneralTypeDTO;
+						
+						break
+					
+					case 1:
+						
+						followUpDTO.IsAgeSelected = false;
+						followUpDTO.IsDurationSelected = true;
+						
+						followUpDTO.AfterInstructionDurationTypeDTO = id_AfterDurationType.selectedItem as GeneralTypeDTO;
+						followUpDTO.AfterDurationValue = parseInt(id_AfterDurationValue.text);
+						
+						followUpDTO.ForInstructionDurationTypeDTO = id_ForDurationType.selectedItem as GeneralTypeDTO;
+						followUpDTO.ForDurationValue = parseInt(id_ForDurationValue.text);
+						
+						break;
+					
+					default:
+						
+						followUpDTO.IsAgeSelected = false;
+						followUpDTO.IsDurationSelected = false;
+						
+						followUpDTO.AgeType = new GeneralTypeDTO();
+						followUpDTO.AgeValueType = new GeneralTypeDTO();
+						
+						followUpDTO.AfterInstructionDurationTypeDTO = new GeneralTypeDTO();
+						followUpDTO.AfterDurationValue = 0;
+						
+						followUpDTO.ForInstructionDurationTypeDTO = new GeneralTypeDTO();
+						followUpDTO.ForDurationValue = 0;
+				}
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_followUpTypeCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Type\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_followUpTypeCmbo;
+				}
+					
+				else if (id_followUpTypeCmbo.selectedIndex == 0)
+				{
+					if (id_Date.textInput.text.length <= 0)
+					{
+						isNotValid = true;
+						
+						errorStr += "Please enter Date\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_Date;
+					}
+				}
+					
+				else if (id_followUpTypeCmbo.selectedIndex == 1)
+				{
+					if (uponCompletionOfType.selectedIndex < 0)
+					{
+						isNotValid = true;
+						
+						errorStr += "Please select Follow Up Type\n";
+						
+						if (!toSetFocus)
+							toSetFocus = uponCompletionOfType;
+					}
+						
+					else if (uponCompletionOfValue.selectedIndex < 0)
+					{
+						isNotValid = true;
+						
+						if (uponCompletionOfType.selectedIndex == 0)
+						{
+							errorStr += "Please select Lab Test\n";
+						}
+						else
+						{
+							errorStr += "Please select Drug\n";
+						}
+						
+						if (!toSetFocus)
+							toSetFocus = uponCompletionOfValue;
+					}
+				}	
+				
+				if (id_FollowUpNatureCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Nature\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_FollowUpNatureCmbo;
+				}
+				
+				if (id_FollowUpMethodCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Method\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_FollowUpMethodCmbo;
+				}
+				
+				if (!id_PRN.selected)
+				{
+					switch (id_FollowUpFrequencyCmbo.selectedIndex)
+					{
+						case 0:
+							
+							if (id_AgeType.selectedIndex < 0)
+							{
+								var ageType:GeneralTypeDTO = id_AgeType.selectedItem as GeneralTypeDTO;
+								
+								if (!ageType)
+								{
+									isNotValid = true;
+									
+									errorStr += "Please select Frequency Age Type\n";
+									
+									if (!toSetFocus)
+										toSetFocus = id_AgeType;
+								}
+							}
+							
+							if (id_AgeValue.selectedIndex < 0)
+							{
+								var ageValue:GeneralTypeDTO = id_AgeValue.selectedItem as GeneralTypeDTO;
+								
+								if (!ageValue)
+								{
+									isNotValid = true;
+									
+									errorStr += "Please select Frequency Age Value\n";
+									
+									if (!toSetFocus)
+										toSetFocus = id_AgeValue;
+								}
+							}
+							
+							break;
+						
+						case 1:
+							
+							if (isDurationValueInvalid(id_AfterDurationValue))
+							{
+								isNotValid = true;
+								
+								errorStr += "Please enter After Duration value\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_AfterDurationValue;
+							}
+							
+							if (id_AfterDurationType.selectedIndex  < 0)
+							{
+								var afterDurationType:GeneralTypeDTO = id_AfterDurationType.selectedItem as GeneralTypeDTO;
+								
+								if (!afterDurationType)
+								{
+									isNotValid = true;
+									
+									errorStr += "Please select After Duration Type\n";
+									
+									if (!toSetFocus)
+										toSetFocus = id_AfterDurationType;
+								}
+							}
+							
+							if (isDurationValueInvalid(id_ForDurationValue))
+							{
+								isNotValid = true;
+								
+								errorStr += "Please enter Duration Value\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_ForDurationValue;
+							}
+							
+							if (id_ForDurationType.selectedIndex < 0)
+							{
+								var forDurationType:GeneralTypeDTO = id_ForDurationType.selectedItem as GeneralTypeDTO;
+								
+								if (!forDurationType)
+								{
+									isNotValid = true;
+									
+									errorStr += "Please select Duration Type\n";
+									
+									if (!toSetFocus)
+										toSetFocus = id_ForDurationType;
+								}
+							}
+							
+							break;
+						
+						default:
+							
+							isNotValid = true;
+							
+							errorStr += "Please select Follow Up Frequency\n";
+							
+							if (!toSetFocus)
+								toSetFocus = id_FollowUpFrequencyCmbo;
+							
+							break;
+					}
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function ():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				}
+				
+				return isNotValid;
+			}
+			
+			private function isDurationValueInvalid(durationValue:TextInput):Boolean
+			{
+				if (!durationValue)
+					return false;
+				
+				var isNotValid:Boolean = false;
+				
+				if (durationValue.text.length <= 0)
+				{
+					isNotValid = true;
+				}
+				else
+				{
+					var val:Number = parseInt(durationValue.text);
+					
+					if (isNaN(val))
+						isNotValid = true;
+				}
+				
+				return isNotValid;
+			}
+			
+			private function setToolTips():void
+			{
+				if (id_followUpTypeCmbo.textInput.text.length)
+				{
+					id_followUpTypeCmbo.toolTip = id_followUpTypeCmbo.textInput.text;
+				}
+				else
+				{
+					id_followUpTypeCmbo.toolTip = "Follow Up Type";
+				}
+				
+				if (id_Date.textInput.text.length)
+				{
+					id_Date.toolTip = id_Date.textInput.text;
+				}
+				else
+				{
+					id_Date.toolTip = "Follow Up Date";
+				}
+				
+				if (uponCompletionOfType.textInput.text.length)
+				{
+					uponCompletionOfType.toolTip = uponCompletionOfType.textInput.text;
+				}
+				else
+				{
+					uponCompletionOfType.toolTip = "Upon Completion Of";
+				}
+				
+				if (uponCompletionOfValue.textInput.text.length)
+				{
+					uponCompletionOfValue.toolTip = uponCompletionOfValue.textInput.text;
+				}
+				else
+				{
+					uponCompletionOfValue.toolTip = "Upon Completion Of";
+				}
+				
+				if (id_FollowUpNatureCmbo.textInput.text)
+				{
+					id_FollowUpNatureCmbo.toolTip = id_FollowUpNatureCmbo.textInput.text;
+				}
+				else
+				{
+					id_FollowUpNatureCmbo.toolTip = "Follow Up Nature";
+				}
+				
+				if (id_Service.textInput.text.length)
+				{
+					id_Service.toolTip = id_Service.textInput.text;
+				}
+				else
+				{
+					id_Service.toolTip = "Fitness Directions";
+				}
+				
+				if (id_FollowUpMethodCmbo.textInput.text.length)
+				{
+					id_FollowUpMethodCmbo.toolTip = id_FollowUpMethodCmbo.textInput.text;
+				}
+				else
+				{
+					id_FollowUpMethodCmbo.toolTip = "Follow Up Method";
+				}
+				
+				if (id_FollowUpFrequencyCmbo.textInput.text)
+				{
+					id_FollowUpFrequencyCmbo.toolTip = id_FollowUpFrequencyCmbo.textInput.text;
+				}
+				else
+				{
+					id_FollowUpFrequencyCmbo.toolTip = "Follow Up Frequency";
+				}
+				
+				if (id_AgeType.textInput.text)
+				{
+					id_AgeType.toolTip = id_AgeType.textInput.text;
+				}
+				else
+				{
+					id_AgeType.toolTip = "Age Type";
+				}
+				
+				if (id_AgeValue.textInput.text)
+				{
+					id_AgeValue.toolTip = id_AgeValue.textInput.text;
+				}
+				else
+				{
+					id_AgeValue.toolTip = "Age Value";
+				}
+				
+				
+				if (id_AfterDurationType.textInput.text)
+				{
+					id_AfterDurationType.toolTip = id_AfterDurationType.textInput.text;
+				}
+				else
+				{
+					id_AfterDurationType.toolTip = "After";
+				}
+				
+				if (id_ForDurationType.textInput.text)
+				{
+					id_ForDurationType.toolTip = id_ForDurationType.textInput.text;
+				}
+				else
+				{
+					id_ForDurationType.toolTip = "For";
+				}
+			}
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				
+				if (tooltipChanged)
+				{
+					tooltipChanged = false;
+					
+					setToolTips();
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout gap="5" paddingLeft="8" paddingRight="8" paddingTop="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<s:HGroup width="100%">
+		<s:VGroup width="45%">
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				
+				<s:BitmapImage id="img_FollowUpType" source="{id_followUpTypeCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Type:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_followUpTypeCmbo" width="100%" dataProvider="{followUpTypeDp}" 
+							prompt="Select Type" toolTip="{id_followUpTypeCmbo.selectedItem}"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+							change="comboChangeHandler(event)"
+							/>
+				
+			</s:HGroup>
+			
+			<s:Group id="followUpTypeGrp" width="100%">
+				<s:HGroup width="100%" height="21" horizontalAlign="right" verticalAlign="middle" 
+						  visible="{(id_followUpTypeCmbo.selectedIndex == 0)}" includeInLayout="{(id_followUpTypeCmbo.selectedIndex == 0)}">
+					<s:Spacer width="11"/>
+					<s:Label text="Follow Up Date:" width="{labelWidth}" styleName="patientFormLabel"/>
+					<s:ComboBox id="id_Date" width="100%"
+								prompt="Enter Date"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								dataProvider="{model.followUpServiceDateList}" labelField="followUpService"
+								keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+				</s:HGroup>
+				<s:HGroup width="100%" horizontalAlign="right" 
+						  visible="{(id_followUpTypeCmbo.selectedIndex == 1)}" includeInLayout="{(id_followUpTypeCmbo.selectedIndex == 1)}">
+					<s:Spacer width="11"/>
+					<s:ComboBox id="uponCompletionOfType" width="{labelWidth}" 
+								prompt="Select Type" dataProvider="{uponCompletionOfDp}"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								change="uponCompletionOfValueChangeHandler()"/>
+					
+					<s:HGroup width="100%" horizontalAlign="right">
+						<s:ComboBox id="uponCompletionOfValue" width="100%"
+									prompt="{uponCompletionOfType.selectedIndex == 0 ? 'Select Lab' : 'Select Drug'}"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									change="comboChangeHandler(event)" labelField="Name"/>
+					</s:HGroup>
+				</s:HGroup>
+			</s:Group>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpNature" source="{id_FollowUpNatureCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Nature:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_FollowUpNatureCmbo" width="100%" dataProvider="{followUpNatureDp}"
+							prompt="Select Nature"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+							change="comboChangeHandler(event)"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:Spacer width="11"/>
+				<s:Label text="Fitness Directions" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_Service" width="100%" prompt="Post visit and wellness Instructions"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+							dataProvider="{model.followUpServiceTypeList}" labelField="followUpService"
+							keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+			</s:HGroup>
+			
+		</s:VGroup>
+		
+		<s:VGroup width="55%">
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpMethod" source="{id_FollowUpMethodCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Method:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_FollowUpMethodCmbo" width="100%" dataProvider="{followUpMethodDp}"
+							prompt="Select Method"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+							change="comboChangeHandler(event)"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpFrequency" 
+							   source="{(id_FollowUpFrequencyCmbo.selectedIndex >= 0 || id_PRN.selected) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Frequency:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+				
+				<s:HGroup width="50%" height="100%" verticalAlign="middle" horizontalAlign="right" gap="5">
+					<s:ComboBox id="id_FollowUpFrequencyCmbo" width="100%" dataProvider="{followUpFrequencyDp}"
+								prompt="Select Frequency"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								change="comboChangeHandler(event)"/>
+					<s:Label text="PRN" toolTip="PRN" styleName="patientFormLabel"/>
+					<s:CheckBox id="id_PRN"
+								skinClass="com.gazuntite.controls.extended.components.CheckBoxGrid.skins.MBCheckBox2Skin"
+								change="prnChangeHandler()"/>
+				</s:HGroup>
+			</s:HGroup>
+			
+			<s:Group id="followUpFrequencyGrp" width="100%">
+				
+				<s:HGroup width="100%" height="21" verticalAlign="middle"
+						  visible="{(id_FollowUpFrequencyCmbo.selectedIndex == 0)}" includeInLayout="{(id_FollowUpFrequencyCmbo.selectedIndex == 0)}">
+					<s:Spacer width="11"/>
+					<s:Label text="Age:" width="30" styleName="patientFormLabel"/>
+					
+					<s:ComboBox id="id_AgeType" prompt="Select Type"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF" width="{rightLabelWidth - 41}"
+								dataProvider="{model.followUpInstructionAgeTypeDTOList}" labelField="Name"
+								change="comboChangeHandler(event)"/>
+					
+					<s:ComboBox id="id_AgeValue" prompt="Select Value"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF" width="100%"
+								dataProvider="{model.followUpInstructionAgeValueTypeDTOList}" labelField="Name"
+								change="comboChangeHandler(event)"/>
+					
+				</s:HGroup>
+				
+				<s:VGroup width="100%" visible="{(id_FollowUpFrequencyCmbo.selectedIndex == 1)}" includeInLayout="{(id_FollowUpFrequencyCmbo.selectedIndex == 1)}">
+					<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="right">
+						<s:Spacer width="11"/>
+						<s:Label text="After Every:"  width="66" styleName="patientFormLabel"/>
+						
+						<s:TextInput id="id_AfterDurationValue" width="50" height="100%"
+									 prompt="Value" toolTip="{id_AfterDurationValue.text}"
+									 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin"/>
+						<s:ComboBox id="id_AfterDurationType" prompt="Select Type" width="100%"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									dataProvider="{model.followUpDurationTypeList}" labelField="Name"
+									change="comboChangeHandler(event)"/>
+					</s:HGroup>
+					
+					<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="right">
+						<s:Spacer width="11"/>
+						<s:Label text="For:" width="66" styleName="patientFormLabel"/>
+						
+						<s:TextInput id="id_ForDurationValue" width="50" height="100%"
+									 prompt="Value" toolTip="{id_ForDurationValue.text}"
+									 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin"/>
+						<s:ComboBox id="id_ForDurationType" width="100%"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									prompt="Select Type"
+									dataProvider="{model.followUpDurationTypeList}" labelField="Name"
+									change="comboChangeHandler(event)"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="right">
+		<s:Button id="id_save" toolTip="Save" buttonMode="true" useHandCursor="true" skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+				  click="saveClickHandler()"/>
+	</s:HGroup>
+	
+</s:SkinnableContainer>

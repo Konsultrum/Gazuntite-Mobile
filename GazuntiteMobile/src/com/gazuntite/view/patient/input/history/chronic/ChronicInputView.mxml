@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  styleName="inputViewSkin" 
+					  xmlns:supportclass="com.gazuntite.view.patient.supportclass.*" 
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:view="com.gazuntite.provider.eprescription.services.patient.view.*"
+					  xmlns:newrx="com.gazuntite.provider.eprescription.services.patient.view.views.newrx.*"
+					  creationComplete="cc(event)" xmlns:dictation="com.gazuntite.components.dictation.*" xmlns:component1="com.gazuntite.common.view.component.*"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.ModuleNoteDTO;
+			import com.gazuntite.common.dto.PatientDTO;
+			import com.gazuntite.common.event.FlipViewEvent;
+			import com.gazuntite.common.event.LoadPatientMedEvent;
+			import com.gazuntite.common.event.MarkValidDataExistsEvent;
+			import com.gazuntite.common.view.events.MarkVisitValidEvent;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.patient.visit.utils.QIUtilityFunctions;
+			import com.gazuntite.provider.eprescription.services.patient.model.EPrescriptionModelLocator;
+			import com.gazuntite.provider.eprescription.services.patient.view.views.newrx.NewRXPanel;
+			import com.gazuntite.temp.model.TempDataModel;
+			import com.gazuntite.view.patient.viewmodel.PatientInputEvent;
+			
+			import mx.events.FlexEvent;
+			[Bindable]	public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			private var _SelectedPatient:PatientDTO;
+			
+			[Bindable]	
+			private var viewModel:PatientInputMedicationPrescriptionViewModel = PatientInputMedicationPrescriptionViewModel.getInstance();
+			
+			[Bindable]
+			private var EpreModel:EPrescriptionModelLocator = EPrescriptionModelLocator.getInstance();
+			
+			[Bindable]
+			private var notesDTO:ModuleNoteDTO;
+			
+			public function get SelectedPatient():PatientDTO
+			{
+				return _SelectedPatient;
+			}
+
+			[Bindable]
+			public function set SelectedPatient(value:PatientDTO):void
+			{
+				if(null != value && uiInboxList != null)
+					LoadMedications();
+					
+				_SelectedPatient = value;
+			}
+
+			protected function cc(event:FlexEvent):void
+			{
+				notesDTO = QIUtilityFunctions.getModuleNoteDTO(Constants.CHRONIC_MEDICATION_MODULE_NAME);
+				
+				addEventListener(PatientDictationNoteViewEvent.PATIENT_DICTATION_NOTE_SAVE_EVENT, patientDictationNoteSaveHandler, false, 0, true);
+				
+				addEventListener("LoadPatientMedications",LoadPatientMedications);
+				addEventListener(MarkVisitValidEvent.MarkVisitValid,MarkVisitValid);
+			}
+			
+			private function LoadPatientMedications(event:Event):void
+			{
+				LoadMedications();
+			}
+			
+			private function MarkVisitValid(e:MarkVisitValidEvent):void
+			{
+				/* var mvdEv:MarkValidDataExistsEvent = new MarkValidDataExistsEvent();
+				
+				mvdEv.visitID = e.visitID;
+				mvdEv.visitDate = e.visitDate.toString();
+				
+				mvdEv.functionName = onSuccessfullVisitSave;
+				
+				CairngormEventDispatcher.getInstance().dispatchEvent(mvdEv); */
+			}
+			
+			public function onSuccessfullVisitSave():void
+			{
+				var ev:PatientInputEvent = new PatientInputEvent(PatientInputEvent.REFRESH_PATIENT_ENCOUNTER_LIST, true);
+				dispatchEvent(ev);
+			}
+			
+			public function LoadMedications():void
+			{
+				if(SelectedPatient && SelectedPatient.GAXENID != '') // check if patient have medication or not -> No GAXENID mean no medication , by Moeen Mohsin 
+				{
+					var eusername:String  	= EpreModel.SearchProviderDetailsResults.EUserName;
+					var epassword:String  	= EpreModel.SearchProviderDetailsResults.EPassword;
+					var gaxenUserId:String 	= EpreModel.SearchProviderDetailsResults.GAXENID;
+					
+					var securityHeaderXML:XML	 			= <Header />;					
+					securityHeaderXML.@EUserName	= eusername;
+					securityHeaderXML.@EPassword	= epassword;
+					securityHeaderXML.@ClinicID		= "sad";
+					
+					
+					var loadMedication:LoadPatientMedEvent = new LoadPatientMedEvent('0',SelectedPatient.GAXENID ,LoadMedicationCallBack);
+					loadMedication.data = securityHeaderXML;
+					CairngormEventDispatcher.getInstance().dispatchEvent(loadMedication);
+				}
+			}
+			
+			private function LoadMedicationCallBack(patientMedAC:ArrayCollection, patientChronicMedAC:ArrayCollection, patientMedAC_inactive:ArrayCollection, patientChronicMedAC_inactive:ArrayCollection):void
+			{
+				//id_PresprectionList.dataProvider = patientMedAC;
+				//uiInboxList.dataProvider = patientChronicMedAC;
+			}
+			
+			private function patientDictationNoteSaveHandler(event:PatientDictationNoteViewEvent):void
+			{
+				event.moduleName = Constants.CHRONIC_MEDICATION_MODULE_NAME;
+				event.data = notesDTO;
+			}
+		]]>
+	</fx:Script>
+	<fx:Binding destination="SelectedPatient" source="model.patientDTO" /> 
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout
+			gap="0" paddingTop="1" paddingBottom="10"
+			/>
+	</s:layout>
+	<component:PatientSubViewTitleBar width="100%" label="CHRONIC MEDICATION" maxSectionCounter="4"  sectionNumber="3" showInputPart="true"
+									  MainSectionLabel="History"
+									  dictationNoteViewModel="{viewModel.medicationDictationNoteViewModel}"  
+									  visible="false" includeInLayout="false"
+									  />
+	<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel.medicationDictationNoteViewModel}"
+										 isSectionLevel="true" note="@{notesDTO.Note}"/>
+	
+	<s:Scroller width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="auto" skinClass="com.gazuntite.skins.controls.list.InvisibleScrollerSkin" >
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0" />
+			</s:layout>
+			
+			<newrx:NewRXInputView width="100%"/>
+			<newrx:NewRXPanel id="id_ChronicPanel" width="100%" height="215" 
+							  visible="false" includeInLayout="false"
+							  openforInputChronic="true" selectedPatient="{SelectedPatient}"/>
+			<s:HGroup width="100%" horizontalAlign="right" paddingRight="5"
+					  visible="false" includeInLayout="false"
+					  >
+				<s:Button toolTip="Next"
+						  buttonMode="true" useHandCursor="true"
+						  skinClass="com.gazuntite.skins.controls.button.NextButtonSkin" 
+						  />
+			</s:HGroup>
+			<s:Spacer height="4" />
+			<component1:SortBar id="uiSortBar" width="100%" 
+								dataProvider="{TempDataModel.getInstance().sortSourceAllergy}"
+								/>
+			<s:SkinnableContainer width="100%" height="27" skinClass="com.gazuntite.skins.PatientSortBarSkin"
+								  visible="false" includeInLayout="false"
+								  >
+				<s:layout>
+					<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="10" gap="8"/>
+				</s:layout>
+				<s:Label text="Arrange By:" styleName="emailInboxToolbarTitle" />
+				<s:DropDownList  skinClass="com.gazuntite.skins.controls.list.PatientSortBarDropListSkin" 
+								 selectedIndex="0"
+								 buttonMode="true" toolTip="Sort List"
+								 >
+					<s:dataProvider>
+						<s:ArrayCollection>
+							<fx:Object label="Recently Added" />
+							<fx:Object label="Medication Name" />
+						</s:ArrayCollection>
+					</s:dataProvider>
+				</s:DropDownList>
+				<s:Spacer width="100%" />
+			</s:SkinnableContainer>
+			
+			<s:List id="uiInboxList"
+					width="100%" allowMultipleSelection="true"
+					height="100%"
+					minHeight="50"
+					skinClass="com.gazuntite.skins.controls.list.PatientInputListSkin"
+					borderVisible="false"
+					dataProvider="{model.medicationDTOList}"
+					itemRenderer="com.gazuntite.view.patient.component.itemrenderer.medication.CMedicationListItemRenderer"/>
+			
+		</s:Group>
+	</s:Scroller>
+</s:SkinnableContainer>

@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Graphic xmlns="http://ns.adobe.com/fxg/2008" version="2.0">
+	<Rect x="0" y="0" 
+		width="65" height="60" 
+		bottomLeftRadiusX="5" bottomRightRadiusX="5" alpha="0"
+		>
+	</Rect>
+	<Rect radiusX="5" x="10" y="8" width="44" height="44"
+			>
+		<fill>
+			<LinearGradient rotation="90">
+				<GradientEntry alpha="1.0" color="#000000" ratio="0"/>
+				<GradientEntry alpha="1.0" color="#666666" ratio="1"/>
+			</LinearGradient>
+		</fill>
+		<filters>
+			<DropShadowFilter alpha="0.75" angle="90" blurX="2" blurY="2" color="#000000" distance="1" hideObject="false" inner="false" knockout="false" quality="3" strength="1"/>
+		</filters>
+	</Rect>
+	<BitmapImage source="@Embed('/assets/images/smallbutton_transparentbg.png')" x="10" y="8" width="44">
+		<filters/>
+	</BitmapImage>
+</Graphic>

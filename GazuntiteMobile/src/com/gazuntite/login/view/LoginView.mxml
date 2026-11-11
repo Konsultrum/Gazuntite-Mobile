@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				   xmlns:s="library://ns.adobe.com/flex/spark" 
+				   xmlns:mx="library://ns.adobe.com/flex/mx" 
+				   xmlns:spicefactory="http://www.spicefactory.org/parsley"  
+				   backgroundColor="0x161616" cornerRadius="5" 
+				   click="onBackgroundClick(event)"
+				   >
+	
+	
+	<s:states>
+		<s:State name="default"/>
+		<s:State name="forgetPassword"/>
+		<s:State name="resetPassword"/>
+	</s:states>
+	
+
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.logo.LogoAsset;
+			import com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager;
+			import com.gazuntite.temp.model.TempApplicationModel;
+			
+			import mx.events.FlexEvent;
+			
+			import com.gazuntite.common.utils.UtilityFunctions;
+			[Bindable]
+			protected var model:TempApplicationModel = TempApplicationModel.getInstance();
+			
+			protected function onLoginClick(event:MouseEvent):void
+			{
+				MainLayoutManager.getInstance().processLoginSuccess();
+			}
+			
+			protected function onUserNameEnter(event:FlexEvent):void
+			{
+				stage.focus = null;
+				uiPassword.setFocus();
+			}
+			
+			protected function onBackgroundClick(event:MouseEvent):void
+			{
+				if (uiLoginArea.hitTestPoint(event.stageX, event.stageY) == false)
+				{
+					stage.focus = null;
+				}
+			}
+			
+			protected function onPasswordEnter(event:FlexEvent):void
+			{
+				stage.focus = null;
+				uiSubmit.setFocus();
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<mx:StringValidator id="vUsername" property="text" required="true"
+							requiredFieldError="Provider ID is required" source="{ uiUserName }"/>
+		<mx:StringValidator id="vPassword" property="text" required="true" 
+							requiredFieldError="Password is required" source="{ uiPassword }"/>
+		
+		
+		<s:GlowFilter id="glowFilter" blurX="8" blurY="8" color="#ff6600"/>
+		
+		<fx:Vector id="motionPathVector" type="spark.effects.animation.MotionPath">
+			<s:SimpleMotionPath id="blurXPath" property="blurX" valueFrom="0" valueTo="11"/>
+			<s:SimpleMotionPath id="blurYPath" property="blurY" valueFrom="0" valueTo="11"/>
+		</fx:Vector>
+	</fx:Declarations>
+	
+	
+<!--	<s:layout>
+		<s:HorizontalLayout horizontalAlign="center" verticalAlign="top"/>
+	</s:layout>
+-->	
+	
+	<s:Group id="uiMainLoginView" width="100%" height="100%">
+		<s:layout>
+			<s:VerticalLayout horizontalAlign="center" verticalAlign="top" />
+		</s:layout>
+		
+		<s:Spacer height="40%"/>
+		
+		<s:Image source="{LogoAsset.loginLogo}" />
+		
+		<s:Spacer height="20%"/>
+		
+		<s:SkinnableContainer id="uiLoginArea" skinClass="com.gazuntite.login.skin.LoginBlueBGSkin" 
+							  verticalCenter="0" horizontalCenter="0" width="344" height="234">
+			<s:layout>
+				<s:VerticalLayout horizontalAlign="center"  verticalAlign="middle" gap="25"/>
+			</s:layout>
+			
+			<s:SkinnableContainer id="invalidGroup" 
+								  visible="false" includeInLayout="false"
+								  width="70%" height="40"
+								  skinClass="com.gazuntite.login.skin.InvalidProviderIDSkin">
+				
+				<s:layout>
+					<s:HorizontalLayout paddingLeft="10" paddingRight="10" horizontalAlign="left" verticalAlign="middle"/>
+				</s:layout>
+				
+				<s:Image source="assets/redX.png" />
+				
+				<s:Label text="Invalid ProviderID" styleName="loginFormInvalidProviderID" width="100%"/>
+				
+				<s:RichEditableText id="richTxt" editable="false" focusEnabled="false">
+					<s:textFlow>
+						<s:TextFlow>
+							<s:p>
+								<s:a href="#">
+									<s:span color="0xffffff" fontSize="12">Forgot Password</s:span>
+								</s:a>
+							</s:p>
+						</s:TextFlow>
+					</s:textFlow>
+				</s:RichEditableText>
+				
+			</s:SkinnableContainer>
+			
+			<!--//////////////////////////////////////////////////////////-->
+			<s:SkinnableContainer id="id_errors" visible="false" width="100%" includeInLayout="false" excludeFrom="resetPassword"   >
+				<s:layout>
+					<s:HorizontalLayout paddingLeft="45" paddingRight="10" verticalAlign="middle"
+										/>
+				</s:layout>
+				<s:Label id="id_errorMsg" color="#111111" fontFamily="Calibri" fontSize="12" text=""/> 
+			</s:SkinnableContainer>
+			<!--//////////////////////////////////////////////////////////-->
+			
+			
+			<s:VGroup horizontalAlign="center" verticalAlign="top" gap="10">
+				<s:Label color="#333333" fontFamily="CalibriCFF" fontSize="17" text="Provider ID" />
+				<s:TextInput id="uiUserName"
+							 fontFamily="CalibriCFF"
+							 width="100%"
+							 text="test1@gazuntite.com" textAlign="center"
+							 prompt="Provider ID"
+							 enter="onUserNameEnter(event)"
+							 />
+			</s:VGroup>
+			
+			<s:VGroup horizontalAlign="center" verticalAlign="top" gap="10">
+				<s:Label color="#333333" fontFamily="CalibriCFF" fontSize="17" text="Password" x="150" y="300"/>
+				<s:TextInput id="uiPassword"
+							 fontFamily="CalibriCFF"
+							 width="100%" 
+							 text="gazuntite123"
+							 displayAsPassword="true" textAlign="center"
+							 enter="onPasswordEnter(event)"
+							 />
+				
+			</s:VGroup>
+			
+			<s:Button id="uiSubmit" label="Sign In"
+					  width="100"
+					  height="32"
+					  click="onLoginClick(event)"
+					  />
+			
+		</s:SkinnableContainer>
+		
+		<s:Spacer height="100%"/>
+		
+		<s:Label color="#5D5D5D" fontFamily="CalibriCFF" fontSize="14" text="Gazuntite {model.version}" />
+		<s:Label color="#5D5D5D" fontFamily="CalibriCFF" fontSize="13" text="Copyrights 2011-2013 Gazuntite Online Clinic LLC. All Rights Reserved." paddingBottom="10"/>
+		
+	</s:Group>
+	<s:Scroller width="100%" height="100%" viewport="{uiMainLoginView}"/>
+	
+	
+</s:BorderContainer>

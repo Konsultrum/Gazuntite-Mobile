@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  height="60"
+		  skinClass="com.gazuntite.main.exambar.view.PatientExamBarSkin" 
+		  xmlns:component="com.gazuntite.common.view.component.*" xmlns:navigation="com.gazuntite.common.view.navigation.*"
+		  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.component.searchInputSupportClasses.ISearchInputManager;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputViewModel;
+			import com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager;
+			import com.gazuntite.temp.integration.SearchInputManagerPatient;
+			[Bindable]
+			public var mainContainerManager:MainLayoutManager = MainLayoutManager.getInstance();
+			[Bindable]
+			public var searchInputManager:ISearchInputManager = new SearchInputManagerPatient();
+			[Bindable]
+			public var searchViewModel:SearchInputViewModel = new SearchInputViewModel();
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:HorizontalLayout
+			verticalAlign="middle"
+			paddingLeft="30"
+			paddingRight="24"
+			/>
+	</s:layout>
+	<s:SkinnableContainer width="100%" height="{this.height}" skinClass="com.gazuntite.main.exambar.view.SelectedSearchPatientViewSkin">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" paddingRight="0"/>
+		</s:layout>
+		<s:VGroup paddingTop="5" height="100%">
+			<s:BitmapImage id="uiProfileImage" smooth="true" height="100%" width="55" source="@Embed('/assets/images/patientimg.png')"/>
+<!--		<s:ToggleButton id="uiProfileImage" 
+							height="80" width="75"
+							skinClass="com.gazuntite.main.exambar.skin.PatientProfileTBSkin"
+							/>
+-->		</s:VGroup>
+		<component:SearchInput
+			width="100%" height="100%"
+			labelMode="true"
+			prompt="Tap To Search Patient"
+			promptTextColor="#999999"
+			fontSize="28"
+			maxLines="2"
+			textColor="#FFFFFF"
+			textBold="true"
+			busyIndicatorColor="#FFFFFF"
+			viewModel="{searchViewModel}" searchInputManager="{searchInputManager}"
+			/>
+	</s:SkinnableContainer>
+	<s:Spacer width="20"/>
+	<s:HGroup height="{uiOption.height}" paddingTop="4" verticalAlign="top">
+		<s:ToggleButton label="History"
+						skinClass="com.gazuntite.main.exambar.skin.HistoryButtonSkin"
+						color="#FFFFFF" fontSize="24"
+						width="100" height="{mainContainerManager.curViewState.patientHistoryOpen?60:40}"
+						selected="{mainContainerManager.curViewState.patientHistoryOpen}"
+						change="mainContainerManager.togglePatientHistory()"
+						/>
+<!--		<s:ToggleButton label="History" 
+						skinClass="com.gazuntite.main.exambar.skin.HistoryTBSkin"
+						selected="{mainContainerManager.curViewState.patientHistoryOpen}"
+						change="mainContainerManager.togglePatientHistory()"
+						/>
+-->
+		<s:ToggleButton label="Input" 
+						color="#FFFFFF" fontSize="24"
+						skinClass="com.gazuntite.main.exambar.skin.InputButtonSkin"
+						width="100" height="{mainContainerManager.curViewState.patientInputOpen?60:40}"
+						selected="{mainContainerManager.curViewState.patientInputOpen}"
+						change="mainContainerManager.togglePatientInput()"
+						/>
+<!--		<s:ToggleButton label="Input" 
+						skinClass="com.gazuntite.main.exambar.skin.InputTBSkin"
+						selected="{mainContainerManager.curViewState.patientInputOpen}"
+						change="mainContainerManager.togglePatientInput()"
+						/>
+-->		
+	</s:HGroup>
+	<s:ToggleButton id="uiOption" skinClass="com.gazuntite.main.exambar.skin.OptionTBSkin"/>
+	<s:Button skinClass="com.gazuntite.main.exambar.skin.ClosePatientButtonSkin"/>
+</s:SkinnableContainer>

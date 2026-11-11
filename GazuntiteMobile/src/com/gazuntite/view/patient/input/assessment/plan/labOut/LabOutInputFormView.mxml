@@ -1,0 +1,488 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:components="com.gazuntite.controls.extended.components.*" xmlns:components1="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*">
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.diagnosis.DiagnosisDTO;
+			import com.gazuntite.common.dto.assessment.labOut.LabDTO;
+			import com.gazuntite.common.dto.assessment.labOut.LabOutLIONICLabTestDTO;
+			import com.gazuntite.common.dto.assessment.labOut.LabOutTestTypeDTO;
+			import com.gazuntite.common.dto.baseDTO.GeneralTypeDTO;
+			import com.gazuntite.common.util.QSConstants;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.AppUtils;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var leftLabelWidth:int = 90;
+			
+			[Bindable]
+			private var rightLabelWidth:int = 120;
+			
+			private var _dictationNoteViewModel:PatientDictationNoteViewModel;
+			
+			[Bindable]
+			public function get dictationNoteViewModel():PatientDictationNoteViewModel
+			{
+				return _dictationNoteViewModel;
+			}
+
+			public function set dictationNoteViewModel(value:PatientDictationNoteViewModel):void
+			{
+				_dictationNoteViewModel = value;
+			}
+
+			private function comboFocusOutHandler(event:FocusEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar.textInput.text.length > 0)
+				{
+					setRequiredIcon(curTar, QIConstants.IMG_GREEN);
+				}
+				else
+				{
+					setRequiredIcon(curTar, QIConstants.IMG_RED);
+				}
+			}
+			
+			private function setRequiredIcon(cmbo:ComboBox, icon:Class):void
+			{
+				switch (cmbo.id)
+				{
+					case "id_TestTypeCmbo":
+						
+						img_TestType.source = icon;
+						break;
+					
+					case "id_OrderMethodCmbo":
+						
+						img_OrderMethod.source = icon;
+						break;
+						
+					case "id_TestNameCmbo":
+						
+						img_TestName.source = icon;
+						break;
+						
+					case "id_TestCodeCmbo":
+						
+						img_TestCode.source = icon;
+						break;
+					
+					case "id_LaboratoryCmbo":
+						
+						img_Laboratory.source = icon;
+						break;
+					
+					default:
+						break;
+				}
+			}
+			
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.UP || event.keyCode == Keyboard.DOWN)
+					return;
+				
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var testType:GeneralTypeDTO = id_TestTypeCmbo.selectedItem as GeneralTypeDTO;
+				
+				if (!testType)
+					return;
+				
+				var ev:PatientInputAssessmentLabOutEvent = new PatientInputAssessmentLabOutEvent(
+							PatientInputAssessmentLabOutEvent.PATIENT_INPUT_LAB_OUT_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				ev.testTypeID = testType.ID;
+				
+				if (curTar.id  == "id_TestNameCmbo")
+				{
+					ev.searchType = PatientInputAssessmentLabOutViewModel.LAB_TEST_NAME;
+				}
+				else
+				{
+					ev.searchType = PatientInputAssessmentLabOutViewModel.LAB_TEST_CODE;
+				}
+				
+				dispatchEvent(ev);
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar.id == "id_TestNameCmbo")
+				{
+					id_TestCodeCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				else
+				{
+					id_TestNameCmbo.selectedIndex = curTar.selectedIndex;
+				}
+				
+				if (curTar.selectedIndex < 0)
+				{
+					id_TestNameCmbo.textInput.text = "";
+					id_TestCodeCmbo.textInput.text = "";
+				}
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				var labDTO:LabDTO = new LabDTO();
+				
+				labDTO.LabTestType = id_TestTypeCmbo.selectedItem as LabOutTestTypeDTO;
+				labDTO.LabTestOrderMethodType = id_OrderMethodCmbo.selectedItem as GeneralTypeDTO;
+				labDTO.LIONICLabTestType = id_TestNameCmbo.selectedItem as LabOutLIONICLabTestDTO;
+				labDTO.Description = id_Description.text;
+				
+				var diagnosis:DiagnosisDTO = id_AssociatedDiagnosisCmbo.selectedItem as DiagnosisDTO;
+				
+				if (diagnosis)
+				{
+					labDTO.PatientDiagnosisID = diagnosis.ID;
+					
+					if (diagnosis.IcdDto)
+					{
+						labDTO.DiagnosisInfo = diagnosis.IcdDto.IcdCodeDescription;
+					}
+				}
+				
+				labDTO.LabTestPriorityType = id_PriorityCmbo.selectedItem as GeneralTypeDTO;
+				labDTO.LabTestSpecimenType = id_SpecimenCmbo.selectedItem as GeneralTypeDTO;
+				labDTO.CollectionDate = id_ColDate.text;
+				labDTO.LabType = id_LaboratoryCmbo.selectedItem as GeneralTypeDTO;
+				
+				labDTO.IsLabIn = false;
+				labDTO.IsFasting = QIConstants.STRING_FALSE;
+				labDTO.UserID = model.LoggedInUserId;
+				labDTO.ClinicBranchID = model.LoggedInUserSelectedBranchId;
+				labDTO.OrderDate = UtilityFunctions.FormatDate(QIConstants.NULL_DATE, "MM-DD-YYYY");
+				labDTO.Onset = UtilityFunctions.FormatDate(QIConstants.NULL_DATE, "MM-DD-YYYY");
+				labDTO.StationID = model.LoggedInUserSelectedStationID;
+				
+				labDTO.VisitDate = model.VisitDate;
+				labDTO.VisitID = model.VisitID;
+				
+				labDTO.PatientID = model.patientDTO.ID;
+				
+				labDTO.CreatedAt = new Date();
+				labDTO.CreatedBy = model.LoggedInUserId;
+				
+				labDTO.ModifiedAt = new Date();
+				labDTO.ModifiedBy = model.LoggedInUserId;
+				
+				labDTO.Note = dictationNoteView.note;
+				labDTO.NoteSubject = "";
+				labDTO.DictationID = QIConstants.GUID_FORMAT;
+				labDTO.IsDirty = true;
+				
+				var ev:PatientInputAssessmentLabOutEvent = new PatientInputAssessmentLabOutEvent(
+							PatientInputAssessmentLabOutEvent.PATIENT_INPUT_LAB_OUT_ADD_EVENT, true);
+				
+				ev.labDTO = labDTO;
+				
+				dispatchEvent(ev);
+				
+				clearForm();
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_TestTypeCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Test Type\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_TestTypeCmbo;
+				}
+				
+				if (id_OrderMethodCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Order Method\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_OrderMethodCmbo;
+				}
+				
+				if (id_TestNameCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Test Name\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_TestNameCmbo;
+				}
+				
+				if (id_TestCodeCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Test Code\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_TestCodeCmbo;
+				}
+				
+				if (id_PriorityCmbo.selectedItem && id_PriorityCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Priority\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_PriorityCmbo;
+				}
+				
+				if (id_SpecimenCmbo.selectedItem && id_SpecimenCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Specimen\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_SpecimenCmbo;
+				}
+				
+				if (id_LaboratoryCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Laboratory\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_LaboratoryCmbo;
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				}
+				
+				return isNotValid;
+			}
+			
+			public function associatedDiagnosisLabel(oItem:Object):String
+			{
+				var label:String = "";
+				
+				if (oItem && oItem.hasOwnProperty("IcdDto") && oItem.IcdDto )
+				{
+					if (oItem.IcdDto.hasOwnProperty("IcdCodeName"))
+					{
+						label += oItem.IcdDto.IcdCodeName + ", ";
+					}
+					
+					if (oItem.IcdDto.hasOwnProperty("IcdCodeDescription"))
+					{
+						label += oItem.IcdDto.IcdCodeDescription;
+					}
+					
+					label += oItem.IsChronic ? " (Chronic) " : " (Acute) ";
+				}
+				
+				return label;
+			}
+			
+			private function clearForm():void
+			{
+				id_TestTypeCmbo.selectedIndex = -1;
+				id_TestTypeCmbo.textInput.text = "";
+				
+				id_OrderMethodCmbo.selectedIndex = -1;
+				id_OrderMethodCmbo.textInput.text = "";
+				
+				id_TestNameCmbo.selectedIndex = -1;
+				id_TestNameCmbo.textInput.text = "";
+				
+				id_TestCodeCmbo.selectedIndex = -1;
+				id_TestCodeCmbo.textInput.text = "";
+				
+				id_Description.text = "";
+				
+				id_AssociatedDiagnosisCmbo.selectedIndex = -1;
+				id_AssociatedDiagnosisCmbo.textInput.text = "";
+				
+				id_PriorityCmbo.selectedIndex = -1;
+				id_PriorityCmbo.textInput.text = "";
+				
+				id_SpecimenCmbo.selectedIndex = -1;
+				id_SpecimenCmbo.textInput.text = "";
+				
+				id_ColDate.text = "";
+				
+				id_LaboratoryCmbo.selectedIndex = -1;
+				id_LaboratoryCmbo.textInput.text = "";
+				
+				dictationNoteView.note = "";
+				
+				dictationNoteViewModel.inDictationMode = false;
+				dictationNoteViewModel.inNoteMode = false;
+			}
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingTop="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="40%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_TestType" source="{(id_TestTypeCmbo.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Test Type:" width="{leftLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_TestTypeCmbo" prompt="Select Test Type" toolTip="Test Type" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.labTestTypeDTOList}" labelField="Name"/>
+		</s:HGroup>
+		
+		<s:HGroup width="60%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_OrderMethod" source="{(id_OrderMethodCmbo.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Order Method:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_OrderMethodCmbo" prompt="Select Order Method" toolTip="Order Method" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.labTestOrderMethodTypeDTOList}" labelField="Name"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="40%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_TestName" source="{(id_TestNameCmbo.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Test Name:" width="{leftLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_TestNameCmbo" prompt="Select Test Name" toolTip="Test Name" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.lionicLabTestTypeDTOList}" labelField="Name"
+						keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="60%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_TestCode" source="{(id_TestCodeCmbo.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Test Code:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_TestCodeCmbo" prompt="Select Test Code" toolTip="Test Code" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.lionicLabTestTypeDTOList}" labelField="testNum"
+						keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="40%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Description:" width="{leftLabelWidth}" styleName="patientFormLabel"/>
+			<s:TextInput id="id_Description" prompt="Enter Description" toolTip="Description" 
+						 width="100%" height="21"
+						 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin" fontSize="14" fontFamily="CalibriCFF"/>
+		</s:HGroup>
+		
+		<s:HGroup width="60%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Associated Diagnosis:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_AssociatedDiagnosisCmbo" prompt="Select Associated Diagnosis" toolTip="Associated Diagnosis"
+						width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.diagnosisDTOList}" labelFunction="associatedDiagnosisLabel"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="40%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Priority:" width="{leftLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_PriorityCmbo" prompt="Select Priority" toolTip="Priority"
+						width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.labPriorityTypeDTOList}" labelField="Name"/>
+		</s:HGroup>
+		
+		<s:HGroup width="60%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Specimen:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_SpecimenCmbo" prompt="Enter Specimen" toolTip="Specimen"
+						width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.labTestSpecimenTypeDTOList}" labelField="Name"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="40%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Collection Date:" width="{leftLabelWidth}" styleName="patientFormLabel"/>
+			<components:LabelDateField id="id_ColDate" prompt="Collection Date" toolTip="Collection Date"
+						width="100%"
+						yearNavigationEnabled="true" maxYear="{new Date().getFullYear()}" minYear="1901"
+						selectableRange="{{rangeStart : new Date()}}" 
+						IsEditAllow="false" editable="false"
+						layoutDirection="rtl"/>
+		</s:HGroup>
+		
+		<s:HGroup width="60%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_Laboratory" source="{(id_LaboratoryCmbo.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Laboratory:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_LaboratoryCmbo" prompt="Select Laboratory" toolTip="Laboratory"
+						width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.labTypeDTOList}" labelField="Name"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" height="100%" verticalAlign="bottom" horizontalAlign="right">
+		<s:ToggleButton 
+			id="dictation" depth="3"
+			buttonMode="true" toolTip="Dictation"
+			skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+			selected="@{dictationNoteViewModel.inDictationMode}"/>
+		<s:ToggleButton 
+			id="note" depth="3"
+			buttonMode="true" toolTip="Note"
+			skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+			selected="@{dictationNoteViewModel.inNoteMode}"/>
+		
+		<s:Button id="save" buttonMode="true" toolTip="Save" skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+				  click="saveClickHandler()"/>
+		<s:Button id="next" buttonMode="true" toolTip="Next" skinClass="com.gazuntite.skins.controls.button.NextButtonSkin"/>
+	</s:HGroup>
+	
+	<dictation:PatientDictationNoteView id="dictationNoteView" width="100%" viewModel="{dictationNoteViewModel}" isSaveButtonVisible="false"/>
+</s:Group>

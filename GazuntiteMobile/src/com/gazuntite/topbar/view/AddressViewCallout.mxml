@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" xmlns:view="com.gazuntite.topbar.view.*"
+		   mouseDownOutside="onClickAway(event)"
+		   >
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexMouseEvent;
+			
+			protected function onClickAway(event:FlexMouseEvent):void
+			{
+				this.close();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:SkinnableContainer width="100%" height="100%" skinClass="com.gazuntite.topbar.skin.ActionBarSkin">
+		
+		<s:layout>
+			<s:VerticalLayout paddingBottom="5" paddingLeft="5" paddingRight="5" paddingTop="5" gap="4"/>
+		</s:layout>
+		<s:SpinnerListContainer width="100%">
+			<s:SpinnerList id="id_AddressCombo" width="100%" selectedIndex="0"
+						   >
+				<s:dataProvider>
+					<s:ArrayCollection>
+						<fx:Object label="95 South Main St."/>
+						<fx:Object label="123 Somewhereland"/>
+						<fx:Object label="456 Somewhereland"/>
+					</s:ArrayCollection>
+				</s:dataProvider>
+			</s:SpinnerList>
+		</s:SpinnerListContainer>
+		
+		
+		<view:StatusView width="100%" height="100%" />
+		
+	</s:SkinnableContainer></s:Callout>

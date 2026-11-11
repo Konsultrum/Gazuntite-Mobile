@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   backgroundColor="#999999"
+		   horizontalPosition="start"
+		   verticalPosition="after"
+		   width="400" height="300"
+		   mouseDownOutside="onMouseDownOutside(event)"
+		   >
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexMouseEvent;
+			[Bindable]
+			public var text:String = "";
+			
+			protected function onMouseDownOutside(event:FlexMouseEvent):void
+			{
+				this.close();
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label horizontalCenter="0" verticalCenter="0"
+			 text="{text}"
+			 />
+</s:Callout>

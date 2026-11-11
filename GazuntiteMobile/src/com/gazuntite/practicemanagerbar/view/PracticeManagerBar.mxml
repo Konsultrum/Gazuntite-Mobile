@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  skinClass="{mainViewModel.showPriacticeManagerView ? practiceMangerSkinSelected : practiceMangerSkin}"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager;
+			import com.gazuntite.practicemanagerbar.skin.practiceMangerSkin;
+			import com.gazuntite.practicemanagerbar.skin.practiceMangerSkinSelected;
+			[Bindable]
+			public var mainViewModel:MainLayoutManager = MainLayoutManager.getInstance();
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Label 
+		visible="{!mainViewModel.showPriacticeManagerView}"
+		verticalCenter="0" color="#1C1C1C" fontSize="24" paddingLeft="5"
+		text="Practice Manager"
+		fontFamily="CalibriCFF" fontWeight="bold">
+		<s:filters>
+			<s:DropShadowFilter alpha="0.25" angle="90" blurX="1" blurY="1" color="#FFFFFF" distance="1" hideObject="false" inner="false" knockout="false" quality="3" strength="1"/>
+		</s:filters>
+	</s:Label>
+	
+	<s:HGroup horizontalAlign="center" verticalAlign="middle" width="100%" height="100%" gap="0">
+		<s:ToggleButton id="id_shedular"
+						width="65" height="65"
+						icon="@Embed('/assets/images/schedulericon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+		<s:ToggleButton id="id_ePrescription" 
+						width="65" height="65"
+						icon="@Embed('/assets/images/ePrescriptionIcon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+		<s:ToggleButton id="id_eLab"
+						width="65" height="65"
+						icon="@Embed('/assets/images/elabsicon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+		<s:ToggleButton id="id_dmg"
+						width="65" height="65"
+						icon="@Embed('/assets/images/docmanagmenticon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+		<s:ToggleButton id="id_un_Encounter"
+						width="65" height="65"
+						icon="@Embed('/assets/images/Billingicon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+		<s:ToggleButton id="id_diseaseManagement"
+						width="65" height="65"
+						icon="@Embed('/assets/images/DiseaseMangementIcon.png')"
+						skinClass="com.gazuntite.practicemanagerbar.skin.PracticeManagerBarButtonSkin"
+						/>
+	</s:HGroup>
+</s:SkinnableContainer>

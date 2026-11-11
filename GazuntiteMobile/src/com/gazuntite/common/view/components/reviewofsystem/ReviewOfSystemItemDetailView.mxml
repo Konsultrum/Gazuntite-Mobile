@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 creationComplete="onCreated(event)"
+		 resize="onResize(event)"
+		 show="onShow(event)"
+		 xmlns:reviewofsystem="com.gazuntite.common.view.components.reviewofsystem.*" 
+		 xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*">
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.components.reviewofsystem.skin.ROS_GeneralBlue_TB;
+			import com.gazuntite.common.view.components.reviewofsystem.skin.RoS_GeneralTB;
+			
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var tempSourceModel:Object;
+			
+			private var m_oModel:Object;
+			
+			[Bindable]
+			public var selectedItem:Object;
+			
+			[Bindable]
+			public var selectedItemRow:int = 0;
+			
+			[Bindable]
+			public var listItemHeight:int = 28;
+			
+			[Bindable]
+			public var tabWidth:Number = 110;
+			
+			[Bindable]
+			protected var viewModel:PatientInputPhysicalReviewOfSystemViewModel = PatientInputPhysicalReviewOfSystemViewModel.getInstance();
+			
+			[Bindable]
+			protected var selectedInnerItemRow:int = 0;
+			
+			[Bindable]
+			protected var selectedInnerItemColumn:int = 0;
+			
+			[Bindable]
+			protected var listInnerItemHeight:int = 27;
+			
+			[Bindable]
+			protected var listInnerItemWidth:int = 100;
+			
+			protected var selectedPage:int = 0;
+			
+			
+			[Bindable]
+			public function get model():Object
+			{
+				return m_oModel;
+			}
+
+			public function set model(value:Object):void
+			{
+				m_oModel = value;
+				scrollToPage(0);
+			}
+
+			protected function onItemSelected(event:IndexChangeEvent):void
+			{
+				viewModel.showRosItemLevel2DetailView = true;
+				selectedItem = uiList.selectedItem ;
+				
+				var item_height:Number = listItemHeight;
+				var total_items:int = model.children.length;
+				var item_per_page:int = Math.ceil(uiListContainer.height/item_height);
+				var total_pages:int = Math.ceil(total_items/item_per_page);
+				
+				selectedInnerItemRow = uiList.selectedIndex - item_per_page*selectedPage;
+			}
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+//				tempSourceModel = TempModelPhysicalRos.instance.temList[0] as TempModelPhysicalRosItemLevelOne;
+				scrollToPage(0);
+			}
+			
+			protected function scrollToPage(newPage:Number):void
+			{
+				if (uiList.dataProvider == null)
+				{
+					return;
+				}
+				var item_height:Number = listItemHeight;
+				var total_items:int = uiList.dataProvider.length;
+				var item_per_page:int = Math.ceil(uiListContainer.height/item_height);
+				var total_pages:int = Math.ceil(total_items/item_per_page);
+				
+				if (newPage<0 || newPage>=total_pages)
+				{
+					return;
+				}
+				viewModel.showRosItemLevel2DetailView = false;
+				
+				selectedPage = newPage;
+				var scroll_to_item:int = newPage*item_per_page;
+				var scroll_pos:int = scroll_to_item*item_height;
+				//				uiListContainer.verticalScrollPosition = scroll_pos;
+				uiScrollAnimatePath.valueTo = scroll_pos;
+				uiScrollAnimate.play();
+				uiPageLabel.text = (newPage+1).toString()+' of '+total_pages.toString();
+			}
+			
+			protected function onTopLevelSelectionChange(event:Event):void
+			{
+				viewModel.rosDetailSelectedItemIndex=-1; 
+				viewModel.rosSelectedItemIndex=-1;
+				selectedItem = null;
+				viewModel.showRosItemDetailViewTopLevel=false
+			}
+			
+			protected function onResize(event:ResizeEvent):void
+			{
+				scrollToPage(0);
+			}
+			
+			protected function onShow(event:FlexEvent):void
+			{
+				scrollToPage(0);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:Animate id="uiScrollAnimate" target="{uiListContainer}" duration="300">
+			<s:motionPaths>
+				<s:SimpleMotionPath id="uiScrollAnimatePath" property="verticalScrollPosition" />
+			</s:motionPaths>
+			
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:DropShadowFilter alpha="0.75" angle="45.0" blurX="4.0"
+							blurY="4.0" color="#000000" distance="2" hideObject="false"
+							inner="false" knockout="false" quality="3" strength="1"/>
+	</s:filters>
+	<s:Group
+		x="{-tabWidth}" y="{selectedItemRow*listItemHeight+29}"
+		visible="{viewModel.showRosItemDetailViewTopLevel}"
+		>
+		<s:ToggleButton width="100%" height="100%"
+						skinClass="{!viewModel.showRosItemLevel2DetailView ? ROS_GeneralBlue_TB : RoS_GeneralTB}"
+						label="{model.label.toUpperCase()}" toolTip="{model.label.toUpperCase()}"
+						selected="@{viewModel.showRosItemDetailViewTopLevel}"
+						change="onTopLevelSelectionChange(event)"
+						buttonMode="true" useHandCursor="true"
+						/>
+		<s:ToggleButton right="25" verticalCenter="0"
+						skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+						buttonMode="true" useHandCursor="true" toolTip="Normal"
+						/>	
+	</s:Group>
+	
+	
+	
+	<s:BorderContainer left="0" top="0" right="0" bottom="0" cornerRadius="3" backgroundColor="{!viewModel.showRosItemLevel2DetailView ? 0x83A3FE : 0xA9AFB6}" borderVisible="false">
+		<s:layout>
+			<s:HorizontalLayout horizontalAlign="left" paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"/>
+		</s:layout>
+		<s:BorderContainer height="100%" cornerRadius="3" backgroundColor="#FFFFFF" borderVisible="false">
+			<s:filters>
+				<s:DropShadowFilter alpha="0.75" angle="90" blurX="2" blurY="2" color="#000000"
+									distance="0" hideObject="false" inner="false" knockout="false"
+									quality="3" strength="1"/>
+			</s:filters>
+			<s:layout>
+				<s:VerticalLayout
+					horizontalAlign="center" paddingTop="3" paddingBottom="2" paddingLeft="2" paddingRight="2" gap="3"
+					/>
+			</s:layout>
+			<s:VGroup id="uiListContainer" height="100%" clipAndEnableScrolling="true" resize="onResize(event)">
+				<s:List id="uiList"  
+						dataProvider="{model.children}"
+						itemRenderer="com.gazuntite.common.view.components.reviewofsystem.renderers.ReviewOfSystemItemRenderer2"
+						selectedIndex="@{viewModel.rosDetailSelectedItemIndex}"
+						change="onItemSelected(event)" borderVisible="false"
+						>
+					<s:layout>
+						<s:VerticalLayout gap="-1"/>
+					</s:layout>
+				</s:List>			
+			</s:VGroup>
+			<s:HGroup width="{uiListContainer.width}" verticalAlign="middle">
+				<s:Button skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.DownBtnSkin"
+						  click="scrollToPage(selectedPage-1)"
+						  />
+				<s:Label id="uiPageLabel" width="100%" textAlign="center" text="1 of 1" fontFamily="CalibriCFFBold"/>
+				<s:Button skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.UpBtnSkin"
+						  click="scrollToPage(selectedPage+1)"
+						  />
+			</s:HGroup>
+		</s:BorderContainer>
+		
+		<reviewofsystem:ReviewOfSystemItem2DetailView 
+			id="id_secondRenderer"
+			width="100%" height="100%" 
+			model="{selectedItem}"
+			visible="{viewModel.showRosItemLevel2DetailView}"
+			includeInLayout="{viewModel.showRosItemLevel2DetailView}"
+			selectedItemRow="{selectedInnerItemRow}"
+			listItemHeight="{listItemHeight}"
+			/>
+		
+		<s:Group width="100%" height="100%" visible="{!viewModel.showRosItemLevel2DetailView}" includeInLayout="{!viewModel.showRosItemLevel2DetailView}">
+			<dictation:PleaseSelectView label="Select any item for input" horizontalCenter="0" verticalCenter="0" width="90%" />
+		</s:Group>
+		
+	</s:BorderContainer>
+	
+</s:Group>

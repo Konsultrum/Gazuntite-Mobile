@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  skinClass="com.gazuntite.common.view.component.sortBarSupportClasses.SortBarSkin"
+					  creationComplete="onCreated(event)"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.IList;
+			import mx.events.FlexEvent;
+			import mx.events.FlexMouseEvent;
+			
+			import spark.components.List;
+			import spark.components.SpinnerList;
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var dataProvider:IList;
+			[Bindable]
+			public var selectedIndex:int = 0;
+			
+			protected var uiDropdown:List;
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+				uiDropdown = new List();
+				uiDropdown.setStyle("borderVisible", true);
+				uiPopup.popUp = uiDropdown;
+				BindingUtils.bindProperty(uiDropdown, "dataProvider", this, "dataProvider");
+				BindingUtils.bindProperty(uiDropdown, "selectedIndex", this, "selectedIndex");
+				uiDropdown.addEventListener(IndexChangeEvent.CHANGE, onSelectionChange);
+				uiDropdown.addEventListener(FlexMouseEvent.MOUSE_DOWN_OUTSIDE, onClickAway);
+			}
+			
+			protected function onSortButtonClick(event:MouseEvent):void
+			{
+				uiDropdown.height = dataProvider.length*48;
+				uiPopup.displayPopUp = true;
+			}
+			
+			protected function onClickAway(event:FlexMouseEvent):void
+			{
+				uiPopup.displayPopUp = false;
+			}
+			
+			protected function onSelectionChange(event:IndexChangeEvent):void
+			{
+				uiPopup.displayPopUp = false;
+				this.selectedIndex = uiDropdown.selectedIndex;
+				this.dispatchEvent(event);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Metadata>
+		[Event(name="change", type="spark.events.IndexChangeEvent")]
+	</fx:Metadata>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:HorizontalLayout verticalAlign="middle" paddingLeft="10" paddingRight="10" gap="8" paddingTop="4" paddingBottom="4"/>
+	</s:layout>
+
+	<s:Label text="Arrange By:" color="#FFFFFF"/>
+	<s:VGroup gap="0">
+		<s:Button label="{dataProvider.getItemAt(selectedIndex).toString()}" 
+				  icon="@Embed('assets/images/03-arrow-south.png')"
+				  iconPlacement="right"
+				  click="onSortButtonClick(event)"/>
+		<s:PopUpAnchor id="uiPopup" width="100%"/>
+	</s:VGroup>
+	
+</s:SkinnableContainer>

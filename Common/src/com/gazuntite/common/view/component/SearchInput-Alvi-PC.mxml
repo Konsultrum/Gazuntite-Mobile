@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  creationComplete="onCreated(event)"
+		  verticalAlign="middle"
+		  paddingRight="4"
+		  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.component.searchInputSupportClasses.ISearchInputManager;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputDropdown;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputEvent;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputViewModel;
+			
+			import mx.events.FlexEvent;
+			import mx.events.FlexMouseEvent;
+			
+			import spark.components.List;
+			import spark.components.SpinnerList;
+			import spark.events.TextOperationEvent;
+			
+			[Bindable]
+			public var labelMode:Boolean = false; // determine to display label or read-only text field when in normal mode
+			
+			[Bindable]
+			public var promptTextColor:uint = 0x999999;
+			
+			[Bindable]
+			public var textColor:uint = 0x0;
+			
+			[Bindable]
+			public var textBold:Boolean = false;
+			
+			[Bindable]
+			public var busyIndicatorColor:uint = 0x0;
+			
+			[Bindable]
+			public var fontSize:int = 16;
+			
+			[Bindable]
+			public var maxLines:Number = 1;
+			
+			
+			[Bindable]
+			public var minSearchTextCount:int = 0;
+			private var _viewModel:SearchInputViewModel;
+
+			[Bindable]
+			public function get viewModel():SearchInputViewModel
+			{
+				return _viewModel;
+			}
+
+			public function set viewModel(value:SearchInputViewModel):void
+			{
+				_viewModel = value;
+				if (_viewModel!=null)
+				{
+					_viewModel.addEventListener(SearchInputEvent.SEARCH_INPUT_EVENT_PENDING, onSearchPending);
+					_viewModel.addEventListener(SearchInputEvent.SEARCH_INPUT_EVENT_COMPLETE, onSearchComplete);
+					_viewModel.addEventListener(SearchInputEvent.SEARCH_INPUT_EVENT_ERROR, onSearchError);
+				}
+			}
+
+			
+			public var searchInputManager:ISearchInputManager;
+
+			[Bindable]
+			public var prompt:String = "Tap to enter";
+			
+			[Bindable]
+			public var selectedItem:Object;
+			
+			protected var availableItemList:SearchInputDropdown;
+			
+			protected function onCreated(event:FlexEvent):void
+			{
+				availableItemList = new SearchInputDropdown();
+				uiPop.popUp = availableItemList;
+				availableItemList.addEventListener(SearchInputEvent.SEARCH_INPUT_EVENT_USER_CANCEL, onUserCancel);
+				availableItemList.addEventListener(SearchInputEvent.SEARCH_INPUT_EVENT_USER_OK, onUserOk);
+			}
+			protected function onUserOk(event:Event):void
+			{
+				selectedItem = availableItemList.selectedItem;
+				viewModel.selectedItem = selectedItem;
+				uiPop.displayPopUp = false;
+				uiTextInput.text = "";
+				currentState = 'normal';
+			}
+			protected function onUserCancel(event:Event):void
+			{
+				uiPop.displayPopUp = false;
+				currentState = 'input';
+			}
+			
+			protected function onSearchPending(event:Event):void
+			{
+				this.currentState = "search";
+			}
+			
+			protected function onSearchComplete(event:Event):void
+			{
+				availableItemList.dataProvider = viewModel.availableItems;
+				if (viewModel.availableItems.length>0)
+				{
+					availableItemList.selectedItem = viewModel.availableItems[0];
+				}
+				availableItemList.width = this.width;
+				uiPop.displayPopUp = true;
+				this.currentState = 'select';
+			}
+			
+			protected function onSearchError(event:Event):void
+			{
+				this.currentState = "error";
+			}
+			
+			protected function onLabelClick(event:MouseEvent):void
+			{
+				this.currentState = "input";
+				if (selectedItem!=null)
+				{
+					uiTextInput.text = uiLabel.text;
+					uiTextInput.selectAll();
+				}
+				uiTextInput.setFocus();
+			}
+			
+			protected function onTextInputEnter(event:FlexEvent):void
+			{
+				if (uiTextInput.text.length>=minSearchTextCount)
+				{
+					startSearch();
+				}
+			}
+			protected function startSearch():void
+			{
+				viewModel.searchText = uiTextInput.text;
+				searchInputManager.startSearch(viewModel);
+				this.currentState = "search";
+			}
+			
+			protected function onSearchButtonClick(event:MouseEvent):void
+			{
+				if (uiTextInput.text.length>=minSearchTextCount)
+				{
+					startSearch();
+				}
+			}
+			
+			protected function onTextInputChange(event:TextOperationEvent):void
+			{
+//				if (uiTextInput.text.length>=minSearchTextCount)
+//				{
+//					startSearch();
+//				}
+			}
+			
+			protected function onCancel(event:MouseEvent):void
+			{
+				uiTextInput.text = "";
+				currentState = "normal";
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="input"/>
+		<s:State name="search"/>
+		<s:State name="select"/>
+	</s:states>
+	<s:Label id="uiLabel" 
+			 width="100%"
+			 text="{viewModel.selectedItem==null?prompt:viewModel.selectedItem}" 
+			 fontSize="{fontSize}"
+			 maxDisplayedLines="{maxLines}"
+			 click="onLabelClick(event)"
+			 fontStyle="normal"
+			 color="{viewModel.selectedItem==null?promptTextColor:textColor}"
+			 fontWeight="{textBold?'bold':'normal'}"
+			 includeIn="normal"
+			 visible="{labelMode}" includeInLayout="{labelMode}"
+			 />
+	<s:TextInput id="uiText" 
+			 width="100%"
+			 editable="false"
+			 text="{viewModel.selectedItem==null?prompt:viewModel.selectedItem}" 
+			 click="onLabelClick(event)"
+			 fontStyle="{viewModel.selectedItem==null?'italic':'normal'}"
+			 fontWeight="{textBold?'bold':'normal'}"
+			 color="{viewModel.selectedItem==null?promptTextColor:textColor}"
+			 includeIn="normal"
+			 visible="{!labelMode}" includeInLayout="{!labelMode}"
+			 />
+	<s:TextInput id="uiTextInput"
+				 width="100%"
+				 change="onTextInputChange(event)"
+				 enter="onTextInputEnter(event)"
+				 includeIn="input, search, select"
+				 editable.select="false"
+				 returnKeyLabel="search"
+				 />
+	<s:Button icon="@Embed('assets/images/06-magnify.png')"
+			 alpha.search="0.5" alpha.select="0.5" enabled.search="false" enabled.select="false"
+			  includeIn="input, select" 
+			  click="onSearchButtonClick(event)"
+			  />
+	<s:BusyIndicator id="uiBusy" width="32"
+					 includeIn="search"
+					 symbolColor="{busyIndicatorColor}"
+					 />
+	<s:Button label="Cancel"
+			 includeIn="input, search, select" 
+			  click="onCancel(event)"
+			  />
+	<s:PopUpAnchor id="uiPop" x="0" y="{uiTextInput.height+2}" includeInLayout="false"
+				   />
+</s:HGroup>

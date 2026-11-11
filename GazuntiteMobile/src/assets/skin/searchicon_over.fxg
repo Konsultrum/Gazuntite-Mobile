@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<Graphic xmlns:ATE="http://ns.adobe.com/ate/2009" xmlns:ai="http://ns.adobe.com/ai/2009" xmlns:fc="http://ns.adobe.com/flashcatalyst/2009" xmlns:d="http://ns.adobe.com/fxg/2008/dt" xmlns="http://ns.adobe.com/fxg/2008" xmlns:flm="http://ns.adobe.com/flame/2008" version="2.0">
+	<Path x="21" y="2" data="M 18.728 14.354 C 18.248 15.034 17.291 15.206 16.596 14.734 L 10.299 10.467 C 9.853 10.166 9.623 9.674 9.64 9.182 C 8.83 10.033 7.764 10.605 6.57 10.817 C 5.105 11.079 3.624 10.766 2.402 9.938 C 1.179 9.11 0.359 7.865 0.092 6.431 C -0.175 4.995 0.145 3.545 0.99 2.348 C 2.739 -0.125 6.216 -0.745 8.742 0.967 C 11.036 2.52 11.768 5.471 10.576 7.852 C 11.042 7.66 11.595 7.697 12.042 8 L 18.34 12.267 C 19.036 12.739 19.21 13.672 18.728 14.354 Z M 9.393 4.771 C 9.207 3.771 8.636 2.903 7.783 2.325 C 6.022 1.132 3.597 1.563 2.377 3.287 C 1.157 5.014 1.599 7.388 3.36 8.58 C 5.122 9.774 7.546 9.343 8.767 7.618 C 9.356 6.783 9.579 5.773 9.393 4.771 Z">
+		<fill>
+			<LinearGradient rotation="90">
+				<GradientEntry alpha="1.0" color="#FFFFFF" ratio="0"/>
+				<GradientEntry alpha="1.0" color="#CCCCCC" ratio="1"/>
+			</LinearGradient>
+		</fill>
+		<filters>
+			<DropShadowFilter alpha="1" angle="90" blurX="2" blurY="2" color="#1B6582" distance="1" hideObject="false" inner="false" knockout="false" quality="3" strength="1"/>
+		</filters>
+	</Path>
+</Graphic>

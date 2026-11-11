@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Callout xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		   xmlns:s="library://ns.adobe.com/flex/spark" 
+		   horizontalPosition="auto"
+		   verticalPosition="after"
+		   width="300" height="300"
+		   mouseDownOutside="onMouseDownOutside(event)"
+		   
+		   >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfo;
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfoItem;
+			
+			import mx.events.FlexEvent;
+			import mx.events.FlexMouseEvent;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.transitions.SlideViewTransition;
+			import spark.transitions.ViewTransitionDirection;
+			private var _navModel:NavigationInfo;
+
+			[Bindable]
+			public function get navModel():NavigationInfo
+			{
+				return _navModel;
+			}
+
+			public function set navModel(value:NavigationInfo):void
+			{
+				_navModel = value;
+				topItem = value.currentTopNavItem;
+				subItem = value.currentSubNavItem;
+			}
+
+			
+			[Bindable]
+			public var topItem:NavigationInfoItem;
+			
+			[Bindable]
+			public var subItem:NavigationInfoItem;
+			
+			protected function onMouseDownOutside(event:FlexMouseEvent):void
+			{
+				this.close();
+			}
+			
+			protected function onTopItemChange(event:IndexChangeEvent):void
+			{
+				topItem = uiTopItemList.selectedItem as NavigationInfoItem;
+				var slide:SlideViewTransition = new SlideViewTransition();
+				slide.direction = ViewTransitionDirection.RIGHT;
+				uiSubItemList.pushView(NavigatorCalloutDetailView, topItem, navModel, slide);
+			}
+			
+			protected function onSubItemsViewCreated(event:FlexEvent):void
+			{
+				var slide:SlideViewTransition = new SlideViewTransition();
+				slide.direction = ViewTransitionDirection.RIGHT;
+				uiSubItemList.pushView(NavigatorCalloutDetailView, topItem, navModel, slide);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:HorizontalLayout
+			paddingTop="-8"
+			gap="0"
+			/>
+	</s:layout>
+	<s:VGroup paddingTop="8" width="40%" height="100%">
+		<s:List id="uiTopItemList"
+				width="100%" height="100%"
+				dataProvider="{navModel.navItemList}"
+				selectedItem="{topItem}"
+				change="onTopItemChange(event)"
+				labelField="title"
+				/>
+	</s:VGroup>
+	<s:Line height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="#333333"/>
+		</s:stroke>
+	</s:Line>
+	<s:ViewNavigator id="uiSubItemList"
+			width="60%" height="100%" firstView="{NavigatorCalloutDetailView}"
+			firstViewData="{topItem}"
+			creationComplete="onSubItemsViewCreated(event)"
+			/>
+</s:Callout>
+    

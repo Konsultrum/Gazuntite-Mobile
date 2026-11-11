@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.container.PatientInputSubViewContainerSkin" 
+					  xmlns:components="com.gazuntite.components.*" 
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:components1="com.gazuntite.controls.extended.components.*"
+					  xmlns:labOut="com.gazuntite.view.patient.input.assessment.plan.labOut.*"
+					  xmlns:recommendation="com.gazuntite.view.patient.input.assessment.plan.recommendation.*"
+					  xmlns:followUp="com.gazuntite.view.patient.input.assessment.plan.followUp.*"
+					  creationComplete="cc()" xmlns:quickInput="com.gazuntite.provider.live.services.diabetes.view.quickInput.*" 
+					  xmlns:advanceCare="com.gazuntite.provider.live.services.diabetes.view.quickInput.advanceCare.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+					  >
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.ModuleNoteDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.patient.visit.utils.QIUtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.plan.advanceCare.PatientInputAssessmentAdvanceCareViewModel;
+			import com.gazuntite.view.patient.input.assessment.plan.followUp.PatientInputAssessmentFollowUpEvent;
+			import com.gazuntite.view.patient.input.assessment.plan.recommendation.PatientInputAssessmentRecommendationEvent;
+			
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]	
+			public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputAssessmentPlanViewModel = PatientInputAssessmentPlanViewModel.getInstance();
+			
+			[Bindable]
+			private var ACviewModel:PatientInputAssessmentAdvanceCareViewModel= PatientInputAssessmentAdvanceCareViewModel.getInstance();
+			
+			private function cc():void
+			{	
+				addEventListener(PatientDictationNoteViewEvent.PATIENT_DICTATION_NOTE_SAVE_EVENT, patientDictationNoteSaveHandler, false, 0, true);
+			}
+			
+			private function patientDictationNoteSaveHandler(event:PatientDictationNoteViewEvent):void
+			{
+				if (!viewModel.notesDTO)
+				{
+					var note:String = dictationNoteView.note;
+					
+					viewModel.notesDTO = QIUtilityFunctions.getModuleNoteDTO(Constants.PLAN_MODULE_NAME);
+					viewModel.notesDTO.Note = note;
+				}
+				
+				event.moduleName = Constants.PLAN_MODULE_NAME;
+				event.data = viewModel.notesDTO;
+			}
+			
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="1" paddingBottom="10"/>
+	</s:layout>
+	
+	<component:PatientSubViewTitleBar width="100%" label="PLAN" maxSectionCounter="3" sectionNumber="3" showInputPart="true"
+									  MainSectionLabel="Assessment"
+									  dictationNoteViewModel="{viewModel.dictationNoteViewModel}"/>
+	
+	<dictation:PatientDictationNoteView id="dictationNoteView" width="100%" minHeight="47" viewModel="{viewModel.dictationNoteViewModel}"
+										 isSectionLevel="true" note="@{viewModel.notesDTO.Note}"/>
+	
+	<s:VGroup width="100%" height="100%" gap="-5" paddingTop="10" paddingLeft="2" paddingRight="2" horizontalAlign="center">
+		<s:TabBar dataProvider="{uiViewStack}" labelField="name" skinClass="com.gazuntite.view.patient.component.PinkTabBarSkin"/>
+		
+		<s:SkinnableContainer width="100%" height="100%" skinClass="com.gazuntite.skins.controls.container.PinkBackgroundSkin">
+			<components1:LabelViewStack id="uiViewStack" width="100%" height="100%" backgroundAlpha="0" borderVisible="false"
+										selectedIndex="@{viewModel.planInputTabSelectedIdx}">
+				<s:ArrayList>
+					<labOut:LabOutInputView name="Lab Out" width="100%" height="100%"/>
+					<recommendation:RecommendationInputView name="Recommendation" width="100%" height="100%"/>
+					<followUp:FollowUpInputView name="Follow Up" width="100%" height="100%"/>
+					<advanceCare:AdvanceCareView name="Advance Care" width="100%" height="100%" dictationNoteViewModel = "{ACviewModel.inlineDictationNoteViewModel}"/>
+				</s:ArrayList>
+			</components1:LabelViewStack>
+		</s:SkinnableContainer>
+	</s:VGroup>	
+	
+</s:SkinnableContainer>

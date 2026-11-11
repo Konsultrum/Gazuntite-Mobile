@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:component="com.gazuntite.view.patient.component.*"
+				xmlns:components="com.gazuntite.components.*" 
+				xmlns:allergy="com.gazuntite.view.patient.input.history.allergy.*"
+				xmlns:vitals="com.gazuntite.view.patient.input.physical.vitals.*" 
+				xmlns:chiefcomplaint="com.gazuntite.view.patient.input.physical.chiefcomplaint.*"
+				xmlns:dictation="com.gazuntite.components.dictation.*"
+				xmlns:cchpi="com.gazuntite.view.patient.component.itemrenderer.cchpi.*" 
+				autoDrawBackground="false"
+				initialize="init()" width="100%"
+				>
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.physical.ccHpi.ChiefComplaintHpiDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.controls.extended.components.PopupGroup;
+			import com.gazuntite.skins.controls.container.input.RecordEditPopupSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.physical.chiefcomplaint.PatientInputPhysicalChiefComplaintEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			
+			[Bindable]
+			public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			
+			[Bindable]
+			private var chiefComplaintHpiDTO:ChiefComplaintHpiDTO;
+			
+			[Bindable]
+			private var headerLbl:String;
+			
+			[Bindable]
+			private var headerToolTip:String;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				chiefComplaintHpiDTO = data as ChiefComplaintHpiDTO;
+				
+				setDictationNoteButtonMode();
+				
+				setHeaderLabel();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number,  unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function toggleEditView():void
+			{
+				if (!chiefComplaintHpiDTO)
+					return;
+				
+				chiefComplaintHpiDTO.inEditMode = !chiefComplaintHpiDTO.inEditMode;
+				
+				setDictationNoteButtonMode();
+			}
+			
+			private function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!chiefComplaintHpiDTO.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+			
+			private function deleteClickHandler(event:MouseEvent):void
+			{
+				if (!chiefComplaintHpiDTO)
+					return;
+				
+				UtilityFunctions.AskMessage("Do you want to delete selected record", function():void
+				{
+					chiefComplaintHpiDTO.IsDeleted = true;
+					chiefComplaintHpiDTO.IsDirty = true;
+					
+					var ev:PatientInputPhysicalChiefComplaintEvent= new PatientInputPhysicalChiefComplaintEvent(
+						PatientInputPhysicalChiefComplaintEvent.PATIENT_INPUT_CHIEF_COMPLAINT_DELETE_EVENT, true);
+					
+					ev.chiefComplaintHpiDTO = chiefComplaintHpiDTO;
+					
+					dispatchEvent(ev);
+				});
+				
+				event.stopPropagation();
+			}
+			
+			private function showGlow():void
+			{
+				if (!chiefComplaintHpiDTO)
+					return;
+				
+				if (chiefComplaintHpiDTO.inEditMode)
+				{
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+			
+			private function setHeaderLabel():void
+			{
+				if (!chiefComplaintHpiDTO)
+					return;
+				
+				headerLbl = chiefComplaintHpiDTO.serialNumber + ". ";
+				headerToolTip = "";
+				
+				if (!chiefComplaintHpiDTO.ChiefComplaint)
+				{
+					if (!chiefComplaintHpiDTO.HPIFields)
+						return;
+					
+					headerLbl += chiefComplaintHpiDTO.HPIFields.Symptom;
+					headerToolTip += chiefComplaintHpiDTO.HPIFields.Symptom
+				}
+					
+				else if (chiefComplaintHpiDTO.ChiefComplaint.length < 1)
+				{
+					if (!chiefComplaintHpiDTO.HPIFields)
+						return;
+					
+					headerLbl += chiefComplaintHpiDTO.HPIFields.Symptom;
+					headerToolTip += chiefComplaintHpiDTO.HPIFields.Symptom;
+				}
+					
+				else 
+				{
+					headerLbl += chiefComplaintHpiDTO.ChiefComplaint;
+					headerToolTip += chiefComplaintHpiDTO.ChiefComplaint;
+				}	
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!chiefComplaintHpiDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			private var popup:PopupGroup;
+			
+			protected function id_btnEdit_clickHandler(event:MouseEvent):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					removeEditPopup();
+					return;
+				}
+				
+				popup 													= new PopupGroup();
+				var editor:ChiefComplaintItemEditView					= new ChiefComplaintItemEditView();
+				editor.chiefComplaintHpiDTO 							= chiefComplaintHpiDTO;
+				editor.width  											= this.width;
+				editor.addEventListener( "saveStatus", function(event:Event):void
+				{
+					removeEditPopup();
+					toggleEditView();
+				});
+				editor.setStyle('skinClass', RecordEditPopupSkin);
+				popup.addElement( editor );
+				popup.ShowPopup( this );
+				
+				editor.id_ChiefComplaint.text = chiefComplaintHpiDTO.ChiefComplaint;
+				
+				if (editor.chiefComplaintHpiDTO.HPIFields)
+				{
+					editor.id_SymptomsCmbo.text = chiefComplaintHpiDTO.HPIFields.Symptom;
+					editor.id_DurationCmbo.text = chiefComplaintHpiDTO.HPIFields.Duration;
+					editor.id_LocationCmbo.text = chiefComplaintHpiDTO.HPIFields.Location;
+					editor.id_QualityCmbo.text = chiefComplaintHpiDTO.HPIFields.Quality;
+					editor.id_SeverityCmbo.text = chiefComplaintHpiDTO.HPIFields.Severity;
+					editor.id_ContextCmbo.text = chiefComplaintHpiDTO.HPIFields.Context;
+					editor.id_ModifyingFactorsCmbo.text = chiefComplaintHpiDTO.HPIFields.ModifyingFactors;
+					editor.id_ExacerbatingCmbo.text = chiefComplaintHpiDTO.HPIFields.Exacerbating;
+					editor.id_ProgressionCmbo.text = chiefComplaintHpiDTO.HPIFields.Progression;
+					editor.id_RadiationCmbo.text = chiefComplaintHpiDTO.HPIFields.Radiation;
+				}
+				
+				editor.toolTipChanged = true;
+				
+				var pt:Point 						= event.currentTarget.localToGlobal( new Point(event.currentTarget.x, event.currentTarget.y)); 
+				popup.move( 25, pt.y + event.currentTarget.height );
+				
+				popup.addEventListener(CloseEvent.CLOSE, function (event:Event):void
+				{
+					id_btnEdit.selected 			= false;
+				});
+				
+				id_btnEdit.selected 				= true;
+				
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				FlexGlobals.topLevelApplication.addEventListener(MouseEvent.CLICK, removeEditPopup);
+			}
+			
+			private function removeEditPopup(event:Event = null):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					popup.removePopup();
+					FlexGlobals.topLevelApplication.removeEventListener(MouseEvent.CLICK, removeEditPopup);
+					popup = null;
+					id_btnEdit.selected 			= false;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="26" >
+		
+		<s:HGroup left="0" right="140" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="6"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label width="100%" color="#333333" 
+					 fontFamily="CalibriCFF" fontSize="14" maxDisplayedLines="1" verticalCenter="0"
+					 text="{headerLbl}" toolTip="{headerToolTip}" showTruncationTip="true"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image buttonMode="true" source="@Embed('assets/images/new.png')"	 useHandCursor="true" />
+			<s:ToggleButton id="id_btnEdit"
+							click="id_btnEdit_clickHandler(event)"
+							buttonMode="true" toolTip="Edit the Record"
+							skinClass="com.gazuntite.skins.controls.toggleButtonSkin.input.EditRecordArrowTBSkin"
+							/>
+			<s:ToggleButton id="uiDictation" right="53" top="8"
+							selected="@{viewModel.inDictationMode}" buttonMode="true" toolTip="Record level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+							click="onDictationNoteButtonsClick(event)"/>
+			
+			<s:ToggleButton id="uiNote" right="28" top="8"
+							selected="@{viewModel.inNoteMode}" buttonMode="true" toolTip="Record level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+							click="onDictationNoteButtonsClick(event)"/>
+			
+			<s:Button right="4" top="8"
+					  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin"
+					  buttonMode="true" useHandCursor="true" toolTip="Delete Chief Complaint"
+					  click="deleteClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="21"  visible="{chiefComplaintHpiDTO.inEditMode}" includeInLayout="{chiefComplaintHpiDTO.inEditMode}">
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"/>
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" note="@{chiefComplaintHpiDTO.Note}"
+											isSaveButtonVisible="false"/>
+		<cchpi:ChiefComplaintItemExpandView width="100%" chiefComplaintHpiDTO="{chiefComplaintHpiDTO}" 
+												   visible="{chiefComplaintHpiDTO.inEditMode}" includeInLayout="{chiefComplaintHpiDTO.inEditMode}" 
+												   skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin"/>
+	</s:Group>
+</s:ItemRenderer>

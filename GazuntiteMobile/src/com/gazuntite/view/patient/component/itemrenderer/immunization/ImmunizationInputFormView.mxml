@@ -1,0 +1,563 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+///////////////////////////////////////////////
+///    Author : Tahir Alvi					///
+///    Date   : 6 May, 2013					///
+///    Project: Gazuntite Online Clinic		///
+///////////////////////////////////////////////
+-->
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:components="com.gazuntite.controls.extended.components.*" 
+		 xmlns:components1="com.gazuntite.components.*" 
+		 xmlns:dictation="com.gazuntite.components.dictation.*" 
+		 xmlns:autoComplete="com.gazuntite.components.kapit.autoComplete.*" xmlns:component="com.gazuntite.common.view.component.*" 
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.baseDTO.GeneralTypeDTO;
+			import com.gazuntite.common.dto.pmh.immunization.ImmunizationDTO;
+			import com.gazuntite.common.util.ValidationUtils;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputViewModel;
+			import com.gazuntite.components.kapit.autoComplete.event.AutoCompleteEvent;
+			import com.gazuntite.patient.visit.event.pmh.immunization.LoadImmunicationStaticDataEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.temp.integration.SearchInputManagerGeneral;
+			import com.gazuntite.temp.model.TempDataModel;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.history.Immunization.PatientInputHistoryImmunizationEvent;
+			import com.gazuntite.view.patient.input.history.Immunization.PatientInputHistoryImmunizationViewModel;
+			import com.gazuntite.view.patient.viewmodel.PatientInputViewModel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			
+			import spark.events.DropDownEvent;
+			import spark.events.TextOperationEvent;
+			
+			[Bindable]	private var model:QIModelLocator = QIModelLocator.getInstance();
+			[Bindable]	private var modelInput:PatientInputViewModel = PatientInputViewModel.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputHistoryImmunizationViewModel = PatientInputHistoryImmunizationViewModel.getInstance();
+			
+			[Bindable]	public var labelWidth:Number = 120;
+			[Bindable]	public var dto:ImmunizationDTO;
+			[Bindable]	private var arrAssociateTypes:ArrayCollection = new ArrayCollection(['This Visit', 'Previous Visit', 'N/A']);
+			
+			/////////// ON Save Button Click ////////////////
+			protected function saveImmunization():void
+			{
+				if (isInvalid() == true) 						// Mandatory Field validation 
+					return;
+				
+				var immDTO:ImmunizationDTO 					= new ImmunizationDTO();
+				immDTO.ImmunizationType 					= id_ImmunizationCmbo.selectedItem as GeneralTypeDTO;
+				immDTO.Dose									= id_DoseCmbo.text;
+				immDTO.LotNumber 							= id_LotNoCmbo.text;
+				immDTO.Manufacturer							= id_ManufacturerCmbo.text;
+				immDTO.Rout									= id_BodySideRouteCmbo.text;
+				
+				var reasonOfRefusal:String 					= ValidationUtils.TrimString(id_ReasonOfRefusalCmbo.text);
+				
+				if (reasonOfRefusal.length)
+					immDTO.RefusalReason 					= reasonOfRefusal;
+				
+				immDTO.Site									= id_SiteCmbo.text;
+				immDTO.Series 								= id_SeriesCmbo.text;
+				
+				immDTO.CreatedAt 							= new Date();
+				immDTO.UpdatedAt 							= new Date();
+				immDTO.PatientID 							= model.patientDTO.ID;
+				
+				switch(id_AssociateVisitzCombo.selectedIndex)
+				{
+					case 0:
+						immDTO.IsNA 						= false;
+						immDTO.VisitID 						= model.VisitID;
+						immDTO.VisitDate 					= model.VisitDate;
+						immDTO.AssociateType 				= 'This Visit';
+						break;
+					
+					case 1:
+						immDTO.IsNA = false;
+						immDTO.VisitID 						= id_VisitDatesCombo.selectedItem.VisitID;
+						immDTO.AssociateType 				= 'Previous Visit';
+						var prevAssociatedVisitDate:Date;
+						if (id_VisitDatesCombo.selectedItem)
+							prevAssociatedVisitDate 		= UtilityFunctions.toDate(id_VisitDatesCombo.selectedItem.VisitDateLbl);
+						
+						immDTO.VisitDate 					= prevAssociatedVisitDate;
+						break;
+					
+					case 2:
+						immDTO.IsNA 						= true;
+						immDTO.AssociateType 				= 'N/A';
+						immDTO.VisitID 						= 0;
+						immDTO.VisitDate 					= QIConstants.NULL_DATE;
+						break;
+				}
+				
+				immDTO.CreatedBy 							= model.LoggedInUserId;
+				immDTO.ManagedBy 							= model.LoggedInUserId;
+				immDTO.DateAdmin 							= id_DateAdmin.text;
+				immDTO.NextDoseDue 							= id_NextDue.text;
+				immDTO.ExpiryDate 							= id_ExpiryDate.text; 
+				immDTO.ModifiedAt 							= Constants.NULL_DATE;
+				immDTO.IsRecordEditable 					= true;
+				immDTO.IsDirty 								= true;
+				
+				immDTO.Note 								= dictationNoteView.note;
+				immDTO.NoteSubject 							= '';
+				immDTO.DictationID 							= '00000000-0000-0000-0000-000000000000';
+				
+				
+				// For Associated Visit
+				if ((id_AssociateVisitzCombo.selectedIndex == 2) || (id_AssociateVisitzCombo.selectedIndex == 1 && id_VisitDatesCombo.selectedIndex != -1))
+				{
+//					Alert.show('Are you sure you want to save this record?', 'Confirmation Required!', Alert.YES | Alert.NO, this, function ():void
+//					{
+						onManagePatientImmunizationEvent(immDTO);
+//					}, null, Alert.OK);
+				}
+				else
+				{
+					onManagePatientImmunizationEvent(immDTO); 
+				}
+			}
+			
+			private function onManagePatientImmunizationEvent(immDTO:ImmunizationDTO):void
+			{
+				var ev:PatientInputHistoryImmunizationEvent = new PatientInputHistoryImmunizationEvent(
+					PatientInputHistoryImmunizationEvent.PATIENT_INPUT_IMMUNIZATION_ADD_EVENT, true);
+				
+				ev.immunizationDTO = immDTO;
+				
+				dispatchEvent(ev);
+				
+				resetImmunizationInputForm();
+			}
+			
+			////////////// All Form Combo Keyup handler ///////////////////
+			protected function Combo_keyUpHandler(event:KeyboardEvent):void
+			{
+				var searchString:String = event.currentTarget.text;
+				
+				if( searchString.length == 2 || searchString.length == 5 )  //only search if length is 2 or 5
+				{
+					var lisd:LoadImmunicationStaticDataEvent;
+					
+					switch (event.currentTarget)
+					{
+						case id_ImmunizationCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.TYPE_SELECT_TYPE);
+							break;
+						case id_DoseCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.DOSE_SELECT_TYPE);
+							
+							break;
+						case id_ManufacturerCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.MANUFACTURER_SELECT_TYPE);
+							
+							break;
+						case id_SeriesCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.SERIERS_SELECT_TYPE);
+							
+							break;
+						case id_ReasonOfRefusalCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.REFUSAL_SELECT_TYPE);
+							
+							break;
+						case id_BodySideRouteCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.ROUT_SELECT_TYPE);
+							
+							break;
+						case id_SiteCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.SITE_SELECT_TYPE);
+							
+							break;
+						case id_LotNoCmbo:
+							
+							lisd = new LoadImmunicationStaticDataEvent(searchString, QIConstants.LOT_SELECT_TYPE);
+							break;	
+					}
+					
+					if( null != lisd )
+						CairngormEventDispatcher.getInstance().dispatchEvent(lisd);
+				}
+			}
+			/////////// Form validation //////////////////////////////
+			public function isInvalid() : Boolean 
+			{
+				var isNotValid:Boolean 	= false;
+				var errorStr:String 	= ""; 
+				var toSetFocus:Object;
+				//ValidationUtils.Trim( id_FName );
+				
+				if (id_AssociateVisitzCombo.selectedIndex < 0 && id_AssociateVisitzCombo.selectedItem == null)
+				{
+					isNotValid = true;
+					errorStr += "Please select an immunization type.\n";
+					if (!toSetFocus)
+						toSetFocus = id_AssociateVisitzCombo;
+				}
+				if(id_AssociateVisitzCombo.selectedIndex == 1)
+				{
+					if (id_VisitDatesCombo.selectedIndex < 0 || id_AssociateVisitzCombo.selectedItem == null)
+					{
+						isNotValid = true;
+						errorStr += "Please select a previous visit.\n";
+						if (!toSetFocus)
+							toSetFocus = id_VisitDatesCombo;
+					}
+				}
+				
+				if (id_ImmunizationCmbo.selectedIndex < 0 && id_ImmunizationCmbo.selectedItem == null)
+				{
+					isNotValid = true;
+					errorStr += "Please select an immunization.\n";
+					if (!toSetFocus)
+						toSetFocus = id_ImmunizationCmbo;
+				}
+				
+				if(id_DoseCmbo.text.length <= 2 && (id_DoseCmbo.selectedIndex < 0 && id_DoseCmbo.selectedItem == null))
+				{
+					isNotValid = true;
+					errorStr += "Please select a dose or enter it.\n";
+					if (!toSetFocus)
+						toSetFocus = id_DoseCmbo;
+				}
+				
+				if (id_RefusalChk.selected) // In case of selected True
+				{
+					if (id_ReasonOfRefusalCmbo.text.length <= 2 && (id_ReasonOfRefusalCmbo.selectedIndex < 0 && id_ReasonOfRefusalCmbo.selectedItem == null))
+					{
+						isNotValid = true;
+						errorStr += "Please select a reason of refusal or enter it.\n";
+						if (!toSetFocus)
+							toSetFocus = id_ReasonOfRefusalCmbo;
+					}
+				}
+				
+				if (isNotValid && errorStr.length)
+//					Alert.show(errorStr, "Immunization Form Required Fields", 4, FlexGlobals.topLevelApplication.mainContainer, function(event:Event):void{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+//					});
+				
+				return isNotValid;
+			}
+			
+			/////// Dose Combo Change Handler //////////////////////////////////////
+			protected function id_DoseCmbo_changeHandler(event:TextOperationEvent):void
+			{
+				id_DoseCmbo.text.replace("-", "");
+				id_DoseCmbo_keyUpHandler( event );
+			} 
+			//////// Dose Combo Key Up Handler //////////////////////////
+			protected function id_DoseCmbo_keyUpHandler(event:Event):void
+			{							
+				if(id_DoseCmbo.text.length >= 2 || id_DoseCmbo.selectedIndex >= 0 || id_DoseCmbo.selectedItem != null)
+					img_Dose.source	= QIConstants.IMG_GREEN;
+				else if(id_DoseCmbo.text.length < 2)
+					img_Dose.source	= QIConstants.IMG_RED;
+			}
+			
+			///////////// Clear Form ///////////////////////
+			public function resetImmunizationInputForm():void
+			{
+				id_AssociateVisitzCombo.selectedIndex 		= -1;
+				id_AssociateVisitzCombo.text 				= '';
+				id_VisitDatesCombo.selectedIndex			= -1;
+				id_VisitDatesCombo.text						= '';
+				id_ImmunizationCmbo.selectedIndex 			= -1;
+				id_ImmunizationCmbo.text		 			= '';
+				id_ManufacturerCmbo.selectedIndex 			= -1;
+				id_ManufacturerCmbo.text 					= "";
+				id_VisitDatesCombo.enabled					= false;
+				id_RefusalChk.selected 						= false;
+				id_ReasonOfRefusalCmbo.selectedIndex 		= -1;
+				id_ReasonOfRefusalCmbo.text 				= "";
+				id_DoseCmbo.selectedIndex 					= -1;
+				id_DoseCmbo.text							= "";
+				id_LotNoCmbo.selectedIndex 					= -1;
+				id_LotNoCmbo.text 							= "";
+				id_BodySideRouteCmbo.selectedIndex 			= -1;
+				id_BodySideRouteCmbo.text 		= "";
+				id_SiteCmbo.selectedIndex 					= -1;
+				id_SiteCmbo.text 							= "";
+				id_DateAdmin.selectedDate 					= null;
+				id_DateAdmin.text 							= "";
+				id_DateAdmin.prompt							="Date Admin";
+				id_NextDue.selectedDate 					= null;
+				id_NextDue.text 							= "";
+				id_NextDue.prompt 							= "Next Due";
+				id_ExpiryDate.selectedDate 					= null;
+				id_ExpiryDate.text 							= "";
+				id_ExpiryDate.prompt 						= "Expiry Date";
+				id_SeriesCmbo.selectedIndex 				= -1;
+				id_SeriesCmbo.text 							= "";
+				img_Dose.source 							= QIConstants.IMG_RED;
+				dictationNoteView.note 						= "";
+				viewModel.inLineDictationNoteViewModel.inDictationMode = false;
+				viewModel.inLineDictationNoteViewModel.inNoteMode = false;
+			}
+			// on selection change
+			protected function id_AssociateVisitzCombo_selectedItemChangeHandler(event:AutoCompleteEvent):void
+			{
+				if(id_AssociateVisitzCombo.selectedIndex >= 0 || id_AssociateVisitzCombo.selectedItem != null)
+					img_Associated.source = QIConstants.IMG_GREEN;
+				
+				if(id_AssociateVisitzCombo.selectedIndex == 1)
+					id_VisitDatesCombo.enabled = true;
+				else
+					id_VisitDatesCombo.enabled = false;
+			}
+			// on text cleared
+			protected function id_AssociateVisitzCombo_textClearedHandler(event:Event):void
+			{
+				if(id_AssociateVisitzCombo.text.length <= 2)
+					img_Associated.source = QIConstants.IMG_RED;
+			}
+			// on text cleared
+			protected function id_ImmunizationCmbo_textClearedHandler(event:Event):void
+			{
+				if(id_ImmunizationCmbo.text.length <= 2)
+					img_Immunization.source = QIConstants.IMG_RED;
+			}
+			// on text cleared
+			protected function id_DoseCmbo_textClearedHandler(event:Event):void
+			{
+				if(id_DoseCmbo.text.length <= 2)
+					img_Dose.source = QIConstants.IMG_RED;
+			}
+			// on selection/change of any item
+			protected function id_ImmunizationCmbo_selectedItemChangeHandler(event:AutoCompleteEvent):void
+			{
+				if(id_ImmunizationCmbo.selectedIndex >= 0 || id_ImmunizationCmbo.selectedItem != null)
+					img_Immunization.source	= QIConstants.IMG_GREEN;
+			}
+			protected function showNote(event:MouseEvent):void
+			{
+				viewModel.inLineDictationNoteViewModel.inlineEditing = false;
+				viewModel.inLineDictationNoteViewModel.inNoteMode = true;
+				viewModel.inLineDictationNoteViewModel.visible = true;
+			}
+			protected function showDictation(event:MouseEvent):void
+			{
+				viewModel.inLineDictationNoteViewModel.inlineEditing = false;
+				viewModel.inLineDictationNoteViewModel.inDictationMode = true;
+				viewModel.inLineDictationNoteViewModel.visible = true;
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="4" paddingRight="4" paddingTop="5" paddingBottom="4" />
+	</s:layout>
+	
+	<s:HGroup width="100%" >
+		<s:VGroup width="50%" horizontalAlign="left" verticalAlign="top" >
+			<s:HGroup width="100%" verticalAlign="middle" height="100%">
+				<s:BitmapImage id="img_Immunization" source="{QIConstants.IMG_RED}"/>
+				<autoComplete:AutoComplete id="id_ImmunizationCmbo" visible="false" includeInLayout="false"
+										   width="100%" height="25" labelField="Name"  
+										   dataProvider="{model.GeneralTypeDTOListForImmunizationType}"
+										   keyUp="Combo_keyUpHandler(event)" prompt="Select Immunization"
+										   selectedItemChange="id_ImmunizationCmbo_selectedItemChangeHandler(event)"
+										   textCleared="id_ImmunizationCmbo_textClearedHandler(event)"
+										   styleName="autoComplete"
+										   />
+				<component:SearchInput width="100%"
+									   viewModel="{new SearchInputViewModel()}"
+									   searchInputManager="{new SearchInputManagerGeneral(TempDataModel.getInstance().immunizationList)}"
+										   prompt="Select Immunization"
+										   />
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<s:BitmapImage id="img_Dose" source="{QIConstants.IMG_RED}"/>
+				<autoComplete:AutoComplete id="id_DoseCmbo" visible="false" includeInLayout="false"
+										   prompt="Enter Dose" width="50%"  height="25" maxChars="50"
+										   dataProvider="{model.GeneralLabelDTOListForDose}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)"  
+										   change="id_DoseCmbo_changeHandler(event)"
+										   textCleared="id_DoseCmbo_textClearedHandler(event)"
+										   styleName="autoComplete"
+										   />
+				<component:SearchInput 
+										   prompt="Enter Dose" width="50%"
+										   viewModel="{new SearchInputViewModel()}"
+										   searchInputManager="{new SearchInputManagerGeneral()}"
+									   />
+				<s:Spacer width="5" />
+				<autoComplete:AutoComplete id="id_BodySideRouteCmbo"  visible="false" includeInLayout="false"
+										   prompt="Enter Body Side/Route" width="50%" height="25"
+										   dataProvider="{model.GeneralLabelDTOListForRoute}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)"   
+										   styleName="autoComplete"
+										   />
+				<component:SearchInput 
+					prompt="Enter Body Side/Route" width="50%"
+					viewModel="{new SearchInputViewModel()}"
+					searchInputManager="{new SearchInputManagerGeneral()}"
+				/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+<!--				<s:SkinnableContainer enabled="{id_ExpiryDate.enabled}" width="50%" skinClass="com.gazuntite.skins.controls.container.input.DateCoverSkin" >
+-->
+				<components:DateInput id="id_ExpiryDate" 
+											   toolTip="Expiry Date" width="100%"
+											   yearNavigationEnabled="true"  IsEditAllow="false" editable="false" maxYear="{new Date().getFullYear()}" minYear="1901"
+											   prompt="Expiry Date" 
+											   styleName="coverDateField"
+											   />
+<!--				</s:SkinnableContainer>-->
+				<s:Spacer width="4" />
+<!--				<s:SkinnableContainer enabled="{id_NextDue.enabled}" width="50%" skinClass="com.gazuntite.skins.controls.container.input.DateCoverSkin" >-->
+				<components:DateInput id="id_NextDue" 
+											   toolTip="Next Due"  width="100%"
+											   yearNavigationEnabled="true"  IsEditAllow="false" editable="false" 
+											   selectableRange="{{rangeStart:new Date()}}"   prompt="Next Due"
+											   styleName="coverDateField"
+											   />
+<!--				</s:SkinnableContainer>-->
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+				<autoComplete:AutoComplete id="id_SiteCmbo"   visible="false" includeInLayout="false"
+										   prompt="Enter Site" width="50%" height="25" maxChars="250"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   dataProvider="{model.GeneralLabelDTOListForSite}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)" tabIndex="14"
+										   />
+				<s:TextInput prompt="Enter Site" width="50%"/>
+				<s:Spacer width="4" />
+				<autoComplete:AutoComplete id="id_SeriesCmbo"  visible="false" includeInLayout="false"
+										   prompt="Enter Series" width="50%" height="25" 
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   dataProvider="{model.GeneralLabelDTOListForSeries}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)"  />
+				<s:TextInput prompt="Enter Series" width="50%"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+				<autoComplete:AutoComplete id="id_ReasonOfRefusalCmbo" visible="false" includeInLayout="false"
+										   width="100%" height="25"  
+										   dataProvider="{model.GeneralLabelDTOListForRefusal}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)"
+										   maxChars="500" prompt="Select Reason of Refusal"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   />
+				<s:TextInput prompt="Select Reason of Refusal" width="100%"/>
+			</s:HGroup>
+			
+		</s:VGroup>
+		
+		<s:VGroup width="50%" horizontalAlign="left" verticalAlign="top" >
+			<s:HGroup width="100%" height="100%" verticalAlign="middle">
+				<s:BitmapImage id="img_Associated" source="{QIConstants.IMG_RED}"/>
+				<autoComplete:AutoComplete id="id_AssociateVisitzCombo" visible="false" includeInLayout="false" 
+										   width="100%" height="25" labelField="DISPLAY_NAME"
+										   selectedItemChange="id_AssociateVisitzCombo_selectedItemChangeHandler(event)"
+										   dataProvider="{arrAssociateTypes}" prompt="Select Associated Visit"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   textCleared="id_AssociateVisitzCombo_textClearedHandler(event)"
+										   />
+				<component:SearchInput 
+					prompt="Select Associated Visit" width="100%"
+					viewModel="{new SearchInputViewModel()}"
+					searchInputManager="{new SearchInputManagerGeneral()}"
+					/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+				<autoComplete:AutoComplete id="id_VisitDatesCombo" visible="false" includeInLayout="false"  
+										   width="100%" height="25" prompt="Previous Visits" labelField="VisitDateLbl" 
+										   dataProvider="{model.unSignedVisitDates}"
+										   enabled="false"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   />
+				<component:SearchInput 
+					prompt="Previous Visits" width="100%"
+					viewModel="{new SearchInputViewModel()}"
+					searchInputManager="{new SearchInputManagerGeneral()}"
+					/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+<!--				<s:SkinnableContainer enabled="{id_NextDue.enabled}" width="50%" skinClass="com.gazuntite.skins.controls.container.input.DateCoverSkin" >-->
+ 				<components:DateInput id="id_DateAdmin" 
+											   toolTip="Admin Date" width="100%" 
+											   yearNavigationEnabled="true"  IsEditAllow="false" editable="false" maxYear="{new Date().getFullYear()}" minYear="1901"
+											   prompt="Date Admin"   selectableRange="{{rangeEnd : new Date()}}" 
+											   styleName="coverDateField"
+											   />
+<!--				</s:SkinnableContainer>-->
+				<s:Spacer width="4" />
+				<autoComplete:AutoComplete id="id_LotNoCmbo" visible="false" includeInLayout="false" 
+										   prompt="Enter Lot #"  width="50%" height="25" 
+										   dataProvider="{model.GeneralLabelDTOListForLot}" labelField="label"
+										   keyUp="Combo_keyUpHandler(event)" maxChars="50"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   /> 
+				<component:SearchInput 
+					prompt="Enter Lot #" width="50%"
+					viewModel="{new SearchInputViewModel()}"
+					searchInputManager="{new SearchInputManagerGeneral()}"
+					/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="16">
+				<autoComplete:AutoComplete id="id_ManufacturerCmbo" visible="false" includeInLayout="false" 
+										   prompt="Enter Manufacturer" width="100%" height="25" 
+										   dataProvider="{model.GeneralLabelDTOListForManufacturer}" labelField="label"
+										   skinClass="com.gazuntite.components.kapit.autoComplete.AutoCompleteSearchSkin"
+										   keyUp="Combo_keyUpHandler(event)"  
+										   />
+				<component:SearchInput 
+					prompt="Enter Manufacturer" width="100%"
+					viewModel="{new SearchInputViewModel()}"
+					searchInputManager="{new SearchInputManagerGeneral(TempDataModel.getInstance().manufactureList)}"
+					/>
+			</s:HGroup>
+			<s:HGroup width="100%" height="100%" verticalAlign="middle" paddingLeft="15">
+				<s:Label verticalCenter="0"	 styleName="patientFormLabel" text="Refusal:"/>
+				<s:ToggleSwitch id="uiActive" skinClass="com.gazuntite.common.view.skin.ToggleSwitchYesNoSkin" selected="true"/>
+				<s:ToggleButton id="id_RefusalChk" 
+								toolTip="{id_RefusalChk.selected ? 'Yes' : 'No'}"
+								styleName="yesNoToggle"
+								visible="false" includeInLayout="false"
+								/>
+			</s:HGroup>
+		</s:VGroup>
+	</s:HGroup>
+	<!-- *******************  Bottom Row ***************************** -->
+	<s:HGroup width="100%" height="100%" verticalAlign="bottom" horizontalAlign="right">
+		<s:Button label="Note" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+				  height="100%"
+				  click="showNote(event)"
+				  />
+		
+		<s:Button label="Dict" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+				  click="showDictation(event)"
+				  />
+		<s:Button label="Save" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+				  />
+
+	</s:HGroup>
+	
+	<dictation:PatientDictationNoteView id="dictationNoteView"  isSectionLevel="true"
+										width="100%" viewModel="{viewModel.inLineDictationNoteViewModel}" isSaveButtonVisible="false"/>
+	
+</s:Group>

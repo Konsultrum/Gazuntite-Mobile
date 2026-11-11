@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 width="{uiLogo.width+uiProdName.width+20}" height="{uiLogo.height+10}"
+		 click="onClick(event)"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.logo.LogoAsset;
+			import com.gazuntite.topbar.viewmodel.TopBarViewModel;
+			[Bindable]
+			protected var viewModel:TopBarViewModel = TopBarViewModel.getInstance();
+			
+			protected function onClick(event:MouseEvent):void
+			{
+				viewModel.logoSelected = !viewModel.logoSelected;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Rect includeInLayout="false" 
+			visible="{viewModel.logoSelected}"
+			radiusX="3" 
+			x="0" y="0" 
+			width="{this.width}" height="{this.height}"
+			>
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry alpha="1.0" color="#54BFDC" ratio="0"/>
+				<s:GradientEntry alpha="1.0" color="#2981A9" ratio="0.4980392156862745"/>
+				<s:GradientEntry alpha="1.0" color="#1875A2" ratio="0.5019607843137255"/>
+				<s:GradientEntry alpha="1.0" color="#369AC4" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:DropShadowFilter blurX="2" blurY="2" distance="0" hideObject="false" color="0x000000" inner="true" strength="1" alpha="0.5" quality="3" knockout="false" angle="90"/>
+		</s:filters>
+	</s:Rect>
+	<s:BitmapImage 
+		id="uiLogo"
+		smooth="true" 
+		source="{LogoAsset.topBarLogo}" 
+		width="80" height="86"
+		y="2" x="10"
+		/>
+	<s:Label id="uiProdName" color="#FFFFFF" 
+			 fontFamily="CalibriCFF" 
+			 fontWeight="bold"
+			 fontSize="18" 
+			 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" 
+			 text="GAZUNTITE" trackingRight="1" 
+			 y="2" x="{uiLogo.width+uiLogo.x+2}"/>
+	<s:Label id="uiVersion" fontFamily="Calibri" fontSize="12" 
+			 paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" 
+			 text="VER 0.3.3" 
+			 trackingRight="1" y="20" 
+			 color="{viewModel.logoSelected?0xFFFFFF:0xAFC4E5}" x="{uiProdName.x+uiProdName.width-uiVersion.width}"/>
+
+</s:Group>

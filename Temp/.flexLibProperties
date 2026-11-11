@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="true" version="3">
+  <includeClasses>
+    <classEntry path="com.gazuntite.temp.view.TopBarPlaceHolder"/>
+    <classEntry path="com.gazuntite.temp.integration.SearchInputManagerAllergy"/>
+    <classEntry path="com.gazuntite.temp.view.PatientHistoryPlaceHolder"/>
+    <classEntry path="com.gazuntite.temp.view.RapidAccessPlaceHolder"/>
+    <classEntry path="com.gazuntite.temp.view.CommunicationPlaceHolder"/>
+    <classEntry path="com.gazuntite.temp.view.WebSearchPlaceHolder"/>
+    <classEntry path="com.gazuntite.temp.model.TempApplicationModel"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>

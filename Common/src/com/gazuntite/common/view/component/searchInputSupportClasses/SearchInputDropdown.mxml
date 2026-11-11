@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:BorderContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 mouseDownOutside="onCancel(event)"
+		 borderColor="#333333" backgroundColor="666666" cornerRadius="4"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import mx.collections.IList;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var dataProvider:IList;
+			
+			[Bindable]
+			public var selectedItem:Object;
+			
+			protected function onItemChange(event:IndexChangeEvent):void
+			{
+				this.dispatchEvent(event);
+			}
+			
+			protected function onOK(event:Event):void
+			{
+				dispatchEvent(new SearchInputEvent(SearchInputEvent.SEARCH_INPUT_EVENT_USER_OK));
+			}
+			
+			protected function onCancel(event:Event):void
+			{
+				dispatchEvent(new SearchInputEvent(SearchInputEvent.SEARCH_INPUT_EVENT_USER_CANCEL));
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout paddingTop="10" paddingBottom="4" paddingLeft="4" paddingRight="4"/>
+	</s:layout>
+	<s:SpinnerListContainer width="100%"
+							>
+		<s:SpinnerList width="100%"
+					   dataProvider="{dataProvider}"
+					   selectedItem="@{selectedItem}"
+					   change="onItemChange(event)"
+					   />
+	</s:SpinnerListContainer>
+	<s:HGroup horizontalAlign="right" width="100%">
+		<s:Button icon="@Embed('assets/images/19-check.png')" click="onOK(event)"/>
+		<s:Button icon="@Embed('assets/images/11-x.png')" click="onCancel(event)"/>
+	</s:HGroup>
+</s:BorderContainer>

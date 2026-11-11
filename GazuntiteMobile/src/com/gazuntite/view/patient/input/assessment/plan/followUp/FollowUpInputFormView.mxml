@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:components="com.gazuntite.controls.extended.components.*" xmlns:components1="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+		 >
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.gazuntite.skins.QuickInput.ros.QIAbnormalBtn;
+			import com.adobe.gazuntite.skins.chrome.radioButtonSkins.ARadioButton;
+			import com.gazuntite.common.dto.assessment.followUp.FollowUpDTO;
+			import com.gazuntite.common.dto.assessment.followUp.FollowUpServiceTypeDTO;
+			import com.gazuntite.common.dto.baseDTO.GeneralTypeDTO;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.patient.visit.utils.QIUtilityFunctions;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.ItemClickEvent;
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var followUpTypeDp:ArrayCollection = new ArrayCollection(["Date", "Upon Completion of"]);
+			
+			[Bindable]
+			private var uponCompletionOfDp:ArrayCollection = new ArrayCollection(["Lab Test", "Drug"]);
+			
+			[Bindable]
+			private var followUpMethodDp:ArrayCollection = new ArrayCollection(["Office", "Phone", "Email", "Chat", "Video"]);
+			
+			[Bindable]
+			private var followUpNatureDp:ArrayCollection = new ArrayCollection(["Acute", "Chronic", "Preventive"]);
+			
+			[Bindable]
+			private var followUpFrequencyDp:ArrayCollection = new ArrayCollection(["Age", "Duration"]);
+			
+			[Bindable]
+			private var labelWidth:int = 100;
+			
+			[Bindable]
+			private var rightLabelWidth:int = 120;
+			
+			private var _dictationNoteViewModel:PatientDictationNoteViewModel;
+			
+			[Bindable]
+			public function get dictationNoteViewModel():PatientDictationNoteViewModel
+			{
+				return _dictationNoteViewModel;
+			}
+
+			public function set dictationNoteViewModel(value:PatientDictationNoteViewModel):void
+			{
+				_dictationNoteViewModel = value;
+			}
+
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var ev:PatientInputAssessmentFollowUpEvent = new PatientInputAssessmentFollowUpEvent(
+							PatientInputAssessmentFollowUpEvent.PATIENT_INPUT_FOLLOW_UP_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				
+				if (curTar.id == "id_Date")
+				{
+					ev.followUpDataControlTypeID = QIConstants.FOLLOW_UP_DATE; //date ID is 2 for date dictionaries
+				}
+				else
+				{
+					ev.followUpDataControlTypeID = QIConstants.FOLLOW_UP_SERVICE;//service ID is 1 for service dictionaries
+				}
+				
+				dispatchEvent(ev);
+			}
+			
+			private function uponCompletionOfValueChangeHandler():void
+			{
+				switch (uponCompletionOfType.selectedIndex)
+				{
+					case 0:
+						
+						uponCompletionOfValue.enabled = true;
+						uponCompletionOfValue.dataProvider = model.followUpLabsList;
+						
+						uponCompletionOfValue.selectedItem = null;
+						uponCompletionOfValue.textInput.text = "";
+						
+						uponCompletionOfType.toolTip = "Lab Test";
+						
+						break;
+					
+					case 1:
+						
+						uponCompletionOfValue.enabled = true;
+						uponCompletionOfValue.dataProvider = model.followUpPatientMedicationlist;
+						
+						uponCompletionOfValue.selectedItem = null;
+						uponCompletionOfValue.textInput.text = "";
+						
+						uponCompletionOfType.toolTip = "Drugs";
+						
+						break;
+					
+					default:
+						
+						uponCompletionOfValue.enabled = false;
+				}
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				var followUpDTO:FollowUpDTO = new FollowUpDTO();
+					
+				setFollowUpDate(followUpDTO);
+				setFollowUpNature(followUpDTO);
+				setFollowUPServiceType(followUpDTO);
+				setFollowUpMethodType(followUpDTO);
+				setFollowUpFrequency(followUpDTO);
+				
+				followUpDTO.VisitDate = model.VisitDate;
+				followUpDTO.VisitID = model.VisitID;
+				followUpDTO.PatientID = model.patientDTO.ID;
+				
+				followUpDTO.CreatedBy = model.LoggedInUserId;
+				followUpDTO.CreatedAt = new Date();
+				
+				followUpDTO.ModifiedBy = model.LoggedInUserId;
+				followUpDTO.ModifiedAt = new Date();
+				
+				followUpDTO.Note = dictationNoteView.note;
+				followUpDTO.DictationID = QIConstants.GUID_FORMAT;
+				followUpDTO.ClinicBranchId = model.LoggedInUserSelectedBranchId;
+				followUpDTO.CreatedByUserTypeID = model.LoggedInUserProviderTypeId;
+				
+				followUpDTO.IsDirty = true;
+				
+				var ev:PatientInputAssessmentFollowUpEvent = new PatientInputAssessmentFollowUpEvent(
+							PatientInputAssessmentFollowUpEvent.PATIENT_INPUT_FOLLOW_UP_ADD_EVENT, true);
+				
+				ev.followUpDTO = followUpDTO;
+				
+				dispatchEvent(ev);
+				
+				clearForm();
+			}
+			
+			private function prnChangeHandler():void
+			{
+				if (id_PRN.selected)
+				{
+					id_FollowUpFrequencyCmbo.selectedIndex = -1;
+					id_FollowUpFrequencyCmbo.textInput.text = "";
+				}
+				
+				id_FollowUpFrequencyCmbo.enabled = !id_PRN.selected;
+			}
+			
+			private function setFollowUpDate(followUpDTO:FollowUpDTO):void
+			{
+				if (!followUpDTO)
+					return;
+				
+				switch (id_followUpTypeCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsByDate = true;
+						followUpDTO.IsOnCompletion = false;
+						followUpDTO.FollowUpDate = id_Date.textInput.text;	
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.IsOnCompletion = true;
+						followUpDTO.IsByDate = false;
+						
+						if (uponCompletionOfType.selectedIndex == 0)
+						{
+							var lab:GeneralTypeDTO = uponCompletionOfValue.selectedItem as GeneralTypeDTO;
+							
+							if (!lab)
+								return;
+							
+							followUpDTO.LabTest = lab;
+							followUpDTO.IsLabTestSelected = true;
+							followUpDTO.IsDrugselected = false;
+						}
+						else
+						{
+							followUpDTO.LabTest.ID = -1;
+						}
+						
+						if (uponCompletionOfType.selectedIndex == 1)
+						{
+							followUpDTO.Drug = uponCompletionOfValue.selectedItem as GeneralTypeDTO;
+							followUpDTO.IsDrugselected = true;
+							followUpDTO.IsLabTestSelected = false;
+						}
+						else
+						{
+							followUpDTO.Drug.ID = -1;
+						} 
+						
+						break;	
+				}
+			}
+			
+			private function setFollowUpNature(followUpDTO:FollowUpDTO):void
+			{
+				if (!followUpDTO)
+					return;
+				
+				switch (id_FollowUpNatureCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsAcute = true;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = true;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+					
+					case 2:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = true;
+						
+						break;
+					
+					default:
+						
+						followUpDTO.IsAcute = false;
+						followUpDTO.IsChronic = false;
+						followUpDTO.IsPreventive = false;
+						
+						break;
+				}
+			}
+			
+			private function setFollowUpMethodType(followUpDTO:FollowUpDTO):void
+			{
+				if (!followUpDTO)
+					return;
+				
+				if (!followUpDTO.FollowUpMethodType)
+					followUpDTO.FollowUpMethodType = new GeneralTypeDTO();
+				
+				switch (id_FollowUpMethodCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+									QIConstants.OFFICE_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 1:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+									QIConstants.PHONE_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 2:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+									QIConstants.EMAIL_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 3:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+									QIConstants.CHAT_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+					
+					case 4:
+						
+						followUpDTO.FollowUpMethodType = (QIUtilityFunctions.getFollowupMethodTypeDTOByName(
+									QIConstants.VIDEO_FOLLOWUP_METHOD_NAME) as GeneralTypeDTO);
+						
+						break;
+				}
+			}
+			
+			private function setFollowUPServiceType(followUpDTO:FollowUpDTO):void
+			{
+				if (!followUpDTO)
+					return;
+				
+				var serviceDTO:FollowUpServiceTypeDTO;
+				
+				if (id_Service.textInput.text.length > 0)
+				{
+					serviceDTO = id_Service.selectedItem as FollowUpServiceTypeDTO;	
+				}
+				
+				if (serviceDTO)
+				{
+					followUpDTO.ServiceTypeDTO = serviceDTO;
+				}
+				else
+				{
+					followUpDTO.ServiceTypeDTO = new FollowUpServiceTypeDTO();
+					followUpDTO.ServiceTypeDTO.followUpService = id_Service.textInput.text;
+				}
+			}
+			
+			private function setFollowUpFrequency(followUpDTO:FollowUpDTO):void
+			{
+				if (!followUpDTO)
+					return;
+				
+				followUpDTO.IsPRN = id_PRN.selected;
+				
+				switch (id_FollowUpFrequencyCmbo.selectedIndex)
+				{
+					case 0:
+						
+						followUpDTO.IsAgeSelected = true;
+						followUpDTO.IsDurationSelected = false;
+						
+						followUpDTO.AgeType = id_AgeType.selectedItem as GeneralTypeDTO;
+						followUpDTO.AgeValueType = id_AgeValue.selectedItem as GeneralTypeDTO;
+						
+						break
+					
+					case 1:
+						
+						followUpDTO.IsAgeSelected = false;
+						followUpDTO.IsDurationSelected = true;
+						
+						followUpDTO.AfterInstructionDurationTypeDTO = id_AfterDurationType.selectedItem as GeneralTypeDTO;
+						followUpDTO.AfterDurationValue = parseInt(id_AfterDurationValue.text);
+						
+						followUpDTO.ForInstructionDurationTypeDTO = id_ForDurationType.selectedItem as GeneralTypeDTO;
+						followUpDTO.ForDurationValue = parseInt(id_ForDurationValue.text);
+						
+						break;
+					
+					default:
+						
+						followUpDTO.IsAgeSelected = false;
+						followUpDTO.IsDurationSelected = false;
+						
+						followUpDTO.AgeType = new GeneralTypeDTO();
+						followUpDTO.AgeValueType = new GeneralTypeDTO();
+						
+						followUpDTO.AfterInstructionDurationTypeDTO = new GeneralTypeDTO();
+						followUpDTO.AfterDurationValue = 0;
+						
+						followUpDTO.ForInstructionDurationTypeDTO = new GeneralTypeDTO();
+						followUpDTO.ForDurationValue = 0;
+				}
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_followUpTypeCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Type\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_followUpTypeCmbo;
+				}
+				
+				else if (id_followUpTypeCmbo.selectedIndex == 0)
+				{
+					if (id_Date.textInput.text.length <= 0)
+					{
+						isNotValid = true;
+						
+						errorStr += "Please enter Date\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_Date;
+					}
+				}
+				
+				else if (id_followUpTypeCmbo.selectedIndex == 1)
+				{
+					if (uponCompletionOfType.selectedIndex < 0)
+					{
+						isNotValid = true;
+						
+						errorStr += "Please select Follow Up Type\n";
+						
+						if (!toSetFocus)
+							toSetFocus = uponCompletionOfType;
+					}
+					
+					else if (uponCompletionOfValue.selectedIndex < 0)
+					{
+						isNotValid = true;
+						
+						if (uponCompletionOfType.selectedIndex == 0)
+						{
+							errorStr += "Please select Lab Test\n";
+						}
+						else
+						{
+							errorStr += "Please select Drug\n";
+						}
+						
+						if (!toSetFocus)
+							toSetFocus = uponCompletionOfValue;
+					}
+				}	
+				
+				if (id_FollowUpNatureCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Nature\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_FollowUpNatureCmbo;
+				}
+				
+				if (id_FollowUpMethodCmbo.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Follow Up Method\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_FollowUpMethodCmbo;
+				}
+				
+				if (!id_PRN.selected)
+				{
+					switch (id_FollowUpFrequencyCmbo.selectedIndex)
+					{
+						case 0:
+							
+							if (id_AgeType.selectedIndex < 0)
+							{
+								isNotValid = true;
+								
+								errorStr += "Please select Frequency Age Type\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_AgeType;
+							}
+							
+							if (id_AgeValue.selectedIndex < 0)
+							{
+								isNotValid = true;
+								
+								errorStr += "Please select Frequency Age Value\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_AgeValue;
+							}
+							
+							break;
+						
+						case 1:
+							
+							if (isDurationValueInvalid(id_AfterDurationValue))
+							{
+								isNotValid = true;
+								
+								errorStr += "Please enter After Duration value\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_AfterDurationValue;
+							}
+							
+							if (id_AfterDurationType.selectedIndex  < 0)
+							{
+								isNotValid = true;
+								
+								errorStr += "Please select After Duration Type\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_AfterDurationType;
+							}
+							
+							if (isDurationValueInvalid(id_ForDurationValue))
+							{
+								isNotValid = true;
+								
+								errorStr += "Please enter Duration Value\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_ForDurationValue;
+							}
+							
+							if (id_ForDurationType.selectedIndex < 0)
+							{
+								isNotValid = true;
+								
+								errorStr += "Please select Duration Type\n";
+								
+								if (!toSetFocus)
+									toSetFocus = id_ForDurationType;
+							}
+							
+							break;
+						
+						default:
+							
+							isNotValid = true;
+							
+							errorStr += "Please select Follow Up Frequency\n";
+							
+							if (!toSetFocus)
+								toSetFocus = id_FollowUpFrequencyCmbo;
+							
+							break;
+					}
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function ():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				}
+				
+				return isNotValid;
+			}
+			
+			private function isDurationValueInvalid(durationValue:TextInput):Boolean
+			{
+				if (!durationValue)
+					return false;
+				
+				var isNotValid:Boolean = false;
+				
+				if (durationValue.text.length <= 0)
+				{
+					isNotValid = true;
+				}
+				else
+				{
+					var val:Number = parseInt(durationValue.text);
+					
+					if (isNaN(val))
+						isNotValid = true;
+				}
+				
+				return isNotValid;
+			}
+			
+			private function clearForm():void
+			{
+				id_followUpTypeCmbo.selectedIndex = -1;
+				id_followUpTypeCmbo.textInput.text = "";
+				
+				id_Date.textInput.text = "";
+				
+				uponCompletionOfType.selectedIndex = -1;
+				uponCompletionOfType.textInput.text = "";
+				
+				uponCompletionOfValue.enabled = false;
+				uponCompletionOfValue.selectedIndex = -1;
+				uponCompletionOfValue.textInput.text = "";
+				
+				id_FollowUpNatureCmbo.selectedIndex = -1;
+				id_FollowUpNatureCmbo.textInput.text = "";
+				
+				id_Service.textInput.text = "";
+				
+				id_FollowUpMethodCmbo.selectedIndex = -1;
+				id_FollowUpMethodCmbo.textInput.text = "";
+				
+				id_PRN.selected = false;
+				
+				id_FollowUpFrequencyCmbo.enabled = true;
+				id_FollowUpFrequencyCmbo.selectedIndex = -1;
+				id_FollowUpFrequencyCmbo.textInput.text = "";
+				
+				id_AgeType.selectedIndex = -1;
+				id_AgeType.textInput.text = "";
+				
+				id_AgeValue.selectedIndex = -1;
+				id_AgeValue.textInput.text = "";
+				
+				id_AfterDurationType.selectedIndex = -1;
+				id_AfterDurationType.textInput.text = "";
+				
+				id_AfterDurationValue.text = "";
+				
+				id_ForDurationType.selectedIndex = -1;
+				id_ForDurationType.textInput.text = "";
+				
+				id_ForDurationValue.text = "";
+				
+				dictationNoteView.note = "";
+				
+				dictationNoteViewModel.inDictationMode = false;
+				dictationNoteViewModel.inNoteMode = false;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout gap="5" paddingLeft="5" paddingRight="5" paddingTop="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<s:HGroup width="100%">
+		<s:VGroup width="45%">
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+			
+				<s:BitmapImage id="img_FollowUpType" source="{id_followUpTypeCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Type:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_followUpTypeCmbo" width="100%" dataProvider="{followUpTypeDp}" 
+							prompt="Select Type" toolTip="Follow Up Type"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"/>
+				
+			</s:HGroup>
+			
+			<s:Group id="followUpTypeGrp" width="100%">
+				<s:HGroup width="100%" height="21" horizontalAlign="right" verticalAlign="middle" 
+						  visible="{(id_followUpTypeCmbo.selectedIndex == 0)}" includeInLayout="{(id_followUpTypeCmbo.selectedIndex == 0)}">
+					<s:Spacer width="11"/>
+					<s:Label text="Follow Up Date:" width="{labelWidth}" styleName="patientFormLabel"/>
+					<s:ComboBox id="id_Date" width="100%"
+								prompt="Enter Date"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								dataProvider="{model.followUpServiceDateList}" labelField="followUpService"
+								keyUp="comboKeyUpHandler(event)"/>
+				</s:HGroup>
+				<s:HGroup width="100%" horizontalAlign="right" visible="{(id_followUpTypeCmbo.selectedIndex == 1)}" includeInLayout="{(id_followUpTypeCmbo.selectedIndex == 1)}">
+					<s:Spacer width="11"/>
+					<s:ComboBox id="uponCompletionOfType" width="{labelWidth}" selectedIndex="0" prompt="Select Type" dataProvider="{uponCompletionOfDp}" 
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+								change="uponCompletionOfValueChangeHandler()"/>
+					<s:HGroup width="100%" horizontalAlign="right">
+						<s:ComboBox id="uponCompletionOfValue" width="100%" prompt="{uponCompletionOfType.selectedIndex == 0 ? 'Select Lab' : 'Select Drug'}"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									dataProvider="{model.followUpLabsList}" labelField="Name"/>
+					</s:HGroup>
+				</s:HGroup>
+			</s:Group>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpNature" source="{id_FollowUpNatureCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Nature:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_FollowUpNatureCmbo" width="100%" dataProvider="{followUpNatureDp}"
+							prompt="Select Nature"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle">
+				<s:Spacer width="11"/>
+				<s:Label text="Fitness Directions:" width="{labelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_Service" width="100%" prompt="Post visit and wellness Instructions"
+							 skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+							 dataProvider="{model.followUpServiceTypeList}" labelField="followUpService"
+							 keyUp="comboKeyUpHandler(event)"/>
+			</s:HGroup>
+			
+		</s:VGroup>
+		
+		<s:VGroup width="55%">
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpMethod" source="{id_FollowUpMethodCmbo.selectedIndex >= 0 ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Method:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+				<s:ComboBox id="id_FollowUpMethodCmbo" width="100%" dataProvider="{followUpMethodDp}"
+							prompt="Select Method"
+							skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"/>
+			</s:HGroup>
+			
+			<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="left">
+				<s:BitmapImage id="img_FollowUpFrequency" 
+							   source="{(id_FollowUpFrequencyCmbo.selectedIndex >= 0 || id_PRN.selected) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+				<s:Label text="Follow Up Frequency:" width="{rightLabelWidth}" styleName="patientFormLabel"/>
+				
+				<s:HGroup width="50%" height="100%" verticalAlign="middle" horizontalAlign="right" gap="5">
+					<s:ComboBox id="id_FollowUpFrequencyCmbo" width="100%" dataProvider="{followUpFrequencyDp}"
+								prompt="Select Frequency"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"/>
+					<s:CheckBox id="id_PRN"
+								skinClass="com.gazuntite.skins.controls.checkbox.CheckboxBlack"
+								useHandCursor="true" buttonMode="true" toolTip="PRN" label="PRN"
+								change="prnChangeHandler()"/>
+				</s:HGroup>
+			</s:HGroup>
+			
+			<s:Group id="followUpFrequencyGrp" width="100%">
+				
+				<s:HGroup width="100%" height="21" verticalAlign="middle"
+						  visible="{(id_FollowUpFrequencyCmbo.selectedIndex == 0)}" includeInLayout="{(id_FollowUpFrequencyCmbo.selectedIndex == 0)}">
+					<s:Spacer width="11"/>
+					<s:Label text="Age:" width="30" styleName="patientFormLabel"/>
+					
+					<s:ComboBox id="id_AgeType" prompt="Select Type"
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF" width="{rightLabelWidth - 41}"
+								dataProvider="{model.followUpInstructionAgeTypeDTOList}" labelField="Name"/>
+					
+					<s:ComboBox id="id_AgeValue" prompt="Select Value" 
+								skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF" width="100%"
+								dataProvider="{model.followUpInstructionAgeValueTypeDTOList}" labelField="Name"/>
+					
+				</s:HGroup>
+				
+				<s:VGroup width="100%" visible="{(id_FollowUpFrequencyCmbo.selectedIndex == 1)}" includeInLayout="{(id_FollowUpFrequencyCmbo.selectedIndex == 1)}">
+					<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="right">
+						<s:Spacer width="11"/>
+						<s:Label text="After Every:"  width="66" styleName="patientFormLabel"/>
+						
+						<s:TextInput id="id_AfterDurationValue" width="50" height="100%"
+									 prompt="Value"
+									 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin"/>
+						<s:ComboBox id="id_AfterDurationType" prompt="Select Type" width="100%"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									dataProvider="{model.followUpDurationTypeList}" labelField="Name"/>
+					</s:HGroup>
+					
+					<s:HGroup width="100%" height="21" verticalAlign="middle" horizontalAlign="right">
+						<s:Spacer width="11"/>
+						<s:Label text="For:" width="66" styleName="patientFormLabel"/>
+						
+						<s:TextInput id="id_ForDurationValue" width="50" height="100%"
+									 prompt="Value"
+									 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin"/>
+						<s:ComboBox id="id_ForDurationType" width="100%"
+									skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+									prompt="Select Type"
+									dataProvider="{model.followUpDurationTypeList}" labelField="Name"/>
+					</s:HGroup>
+				</s:VGroup>
+			</s:Group>
+		</s:VGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" height="25" verticalAlign="middle" horizontalAlign="right">
+		<s:ToggleButton 
+			id="dictation" depth="3"
+			buttonMode="true" toolTip="Dictation"
+			skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+			selected="@{dictationNoteViewModel.inDictationMode}"/>
+		<s:ToggleButton 
+			id="note" depth="3"
+			buttonMode="true" toolTip="Note"
+			skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+			selected="@{dictationNoteViewModel.inNoteMode}"/>
+		
+		<s:Button id="save" toolTip="Save" buttonMode="true" useHandCursor="true" skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+				  click="saveClickHandler()"/>
+		<s:Button id="next" toolTip="Next" buttonMode="true" useHandCursor="true" skinClass="com.gazuntite.skins.controls.button.NextButtonSkin"/>
+	</s:HGroup>
+	
+	<dictation:PatientDictationNoteView id="dictationNoteView" width="100%" viewModel="{dictationNoteViewModel}" isSaveButtonVisible="false"/>
+</s:Group>

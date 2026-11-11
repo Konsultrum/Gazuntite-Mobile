@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" xmlns:components="com.gazuntite.components.*" 
+				xmlns:inHouseLab="com.gazuntite.view.patient.component.itemrenderer.inHouseLab.*"
+				autoDrawBackground="false" 
+				width="100%" xmlns:dictation="com.gazuntite.components.dictation.*"
+				initialize="init()"
+				>
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.physical.inHouseLab.InHouseLabDTO;
+			import com.gazuntite.common.dto.physical.inHouseLab.InHouseLabTestTypeDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.controls.extended.components.PopupGroup;
+			import com.gazuntite.skins.controls.container.input.RecordEditPopupSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.physical.inhouselab.PatientInputPhysicalInHouseLabEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			
+			[Bindable]	public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			[Bindable] private var inHouseLabDTO:InHouseLabDTO;
+			private var popup:PopupGroup;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				inHouseLabDTO = value as InHouseLabDTO;
+				
+				if (!inHouseLabDTO)
+					return;
+				
+				setDictationNoteButtonMode();
+				
+				invalidateDisplayList();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!inHouseLabDTO.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+			
+			private function deleteClickHandler(event:MouseEvent):void
+			{
+				if (!inHouseLabDTO)
+					return;
+				
+				UtilityFunctions.AskMessage("Do you want to delete selected record", function():void
+				{
+					inHouseLabDTO.IsDeleted = true;
+					inHouseLabDTO.IsDirty = true;
+					
+					var ev:PatientInputPhysicalInHouseLabEvent = new PatientInputPhysicalInHouseLabEvent(
+						PatientInputPhysicalInHouseLabEvent.PATIENT_INPUT_IN_HOUSE_LAB_DELETE_EVENT, true);
+					
+					ev.inHouseLabDTO = inHouseLabDTO;
+					
+					dispatchEvent(ev);
+				});
+				
+				event.stopPropagation();
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!inHouseLabDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function showGlow():void
+			{
+				if (!inHouseLabDTO)
+					return;
+				
+				if (inHouseLabDTO.inEditMode)
+				{
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+			
+			private function toggleEditView():void
+			{
+				if (!inHouseLabDTO)
+					return;
+				
+				inHouseLabDTO.inEditMode = !inHouseLabDTO.inEditMode;
+				showGlow();
+				
+				if (!inHouseLabDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+			}
+			protected function id_btnEdit_clickHandler(event:MouseEvent):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					removeEditPopup();
+					return;
+				}
+				
+				popup 											= new PopupGroup();
+				var editor:InHouseLabItemEditView				= new InHouseLabItemEditView();
+				editor.inHouseLabDTO 							= inHouseLabDTO;
+				editor.width  									= this.width;
+				editor.addEventListener( "saveStatus", function(event:Event):void
+				{
+					removeEditPopup();
+					toggleEditView();
+				});
+				editor.setStyle('skinClass', RecordEditPopupSkin);
+				popup.addElement( editor );
+				popup.ShowPopup( this );
+				
+				editor.id_TestName.text 						= inHouseLabDTO.InHouseLabTestType.Name;
+				editor.id_CptCode.text 							= inHouseLabDTO.InHouseLabTestType.Code;
+				editor.id_Result.text 							= inHouseLabDTO.Result;
+				editor.id_normalRange.text 						= inHouseLabDTO.InHouseLabTestType.NormalRange;
+				editor.id_normalRange.toolTip					= inHouseLabDTO.InHouseLabTestType.NormalRange;
+				
+				var pt:Point 									= event.currentTarget.localToGlobal( new Point(event.currentTarget.x, event.currentTarget.y)); 
+				popup.move( 22, pt.y + event.currentTarget.height );
+				
+				popup.addEventListener(CloseEvent.CLOSE, function (event:Event):void
+				{
+					id_btnEdit.selected 			= false;
+				});
+				
+				id_btnEdit.selected 				= true;
+				
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				FlexGlobals.topLevelApplication.addEventListener(MouseEvent.CLICK, removeEditPopup);
+			}
+			
+			private function removeEditPopup(event:Event = null):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					popup.removePopup();
+					FlexGlobals.topLevelApplication.removeEventListener(MouseEvent.CLICK, removeEditPopup);
+					popup = null;
+					id_btnEdit.selected 			= false;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="26" >
+		<s:HGroup left="0" right="76" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="6"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label color="#333333" fontFamily="CalibriCFF" fontSize="14" maxDisplayedLines="1" showTruncationTip="true"
+					 text="{inHouseLabDTO.serialNumber.toString() + '. ' + inHouseLabDTO.InHouseLabTestType.Name}"
+					 toolTip="{inHouseLabDTO.InHouseLabTestType.Name}" verticalCenter="0" width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image source="@Embed('assets/images/new.png')"/>
+			<s:ToggleButton id="id_btnEdit"
+							click="id_btnEdit_clickHandler(event)"
+							buttonMode="true" toolTip="Edit the Record"
+							skinClass="com.gazuntite.skins.controls.toggleButtonSkin.input.EditRecordArrowTBSkin"
+							/>
+			<s:ToggleButton id="uiDictation" 
+							selected="@{viewModel.inDictationMode}" toolTip="Record level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+							click="onDictationNoteButtonsClick(event)"/>
+			
+			<s:ToggleButton id="uiNote" 
+							selected="@{viewModel.inNoteMode}" toolTip="Record level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+							click="onDictationNoteButtonsClick(event)"/>
+			<s:Button 
+				skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin"
+				useHandCursor="true" toolTip="Delete In-House Lab"
+				click="deleteClickHandler(event)"/>
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group id="editModeView" width="{id_Header.width - 5}" top="21" visible="{inHouseLabDTO.inEditMode}" includeInLayout="{inHouseLabDTO.inEditMode}">
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingLeft="10" paddingRight="3" paddingTop="4" paddingBottom="3"/>
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}"
+											note="@{inHouseLabDTO.Note}" noteTooltip="{inHouseLabDTO.Note}" isSaveButtonVisible="false"/>
+		<inHouseLab:InHouseLabExpandView width="100%" inHouseLabDTO="{inHouseLabDTO}"
+										 visible="{inHouseLabDTO.inEditMode}" includeInLayout="{inHouseLabDTO.inEditMode}" />
+	</s:Group>
+</s:ItemRenderer>

@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				initialize="init()" creationComplete="cc()"
+				xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+				>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.common.dto.pmh.compHistory.MedicalHistoryDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.LoadMedicalHistoryByPatientIdEvent;
+			import com.gazuntite.patient.visit.event.pmh.comphistory.SaveMedicalHistoryEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.history.Immunization.PatientInputHistoryImmunizationEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.collections.ArrayCollection;
+			
+			[Bindable]	public var dto:MedicalHistoryDTO;
+			[Bindable]	public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			[Bindable]	protected var model:QIModelLocator = QIModelLocator.getInstance();
+						
+			protected function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function cc():void
+			{
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				if (value == null)
+					return;
+				
+				dto = value as MedicalHistoryDTO;
+				
+				id_btnDictation.visible = ! dto.IsNone;
+				id_btnNote.visible = ! dto.IsNone;
+				id_btnDictation.includeInLayout = ! dto.IsNone;
+				id_btnNote.includeInLayout = ! dto.IsNone;
+				
+				
+				setDictationNoteButtonMode();
+				showGlow();
+				
+				invalidateDisplayList();
+			}
+			
+			protected function toggleEditView():void
+			{				
+				if(dto.IsNone) return;
+				
+				dto.inEditMode = !dto.inEditMode;
+				
+				if (dto.inEditMode)
+				{
+					if(gp.numChildren == 2)
+					{
+						if(gp.getElementAt(1) is GeneralListItemEditView)
+						{
+							gp.removeElementAt(1);
+							callLater(addItemEditView); 
+						}
+						return;
+					}
+					else
+						callLater(addItemEditView); 
+				}
+				
+				showGlow();
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!dto.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function showGlow():void
+			{
+				if (dto.inEditMode)
+				{
+					
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+			
+			private function addItemEditView():void
+			{
+				var gev:GeneralListItemEditView 				= new  GeneralListItemEditView();
+				gev.medicalHistoryDto = dto;
+				gev.percentWidth							= 100;
+				gev.setStyle('skinClass', NewRXExpandRendererSkin);
+				
+				gp.addElementAt(gev, 1);
+				
+				// onset date........
+				if(dto.OnSet != '')
+				{
+					gev.id_Onset.text 						= UtilityFunctions.FormatDate(dto.OnSet,"MM/DD/YYYY");
+					gev.id_Onset.prompt 					= dto.OnSet;
+					gev.id_Onset.selectedDate				= dto.OnSet as Date ;
+				}else{
+					gev.id_Onset.text 						= '';
+					gev.id_Onset.prompt 					= 'OnSet';
+				}
+				
+				// active Y N Button......
+				if(dto.isActive)
+					gev.uiIsActive.selected = true;
+				
+				
+				
+			}
+			
+			public function getDispLabel(dataModel:MedicalHistoryDTO):String
+			{
+				var result:String = "";
+				var srNo:String = "";
+				
+				if (dto.serialNumber)
+				{
+					srNo = dto.serialNumber.toString();
+				}	
+				
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if (dto.IsNone)
+				{
+					result = srNo + ". " + dto.medicalhistorytype.Name + "- None";
+				}
+				else 
+				{					
+					result = srNo + ". " + dto.medicalhistorytype.Name + "- " + dto.ICDDTO.IcdCodeDescription;
+				}
+				
+				return result;
+			}
+			
+			public function getDispTooltip(dataModel:MedicalHistoryDTO):String
+			{
+				var result:String = "";
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if (dto.IsNone)
+				{
+					result = dto.medicalhistorytype.Name + "- None";
+				}
+				else 
+				{
+					result = dto.medicalhistorytype.Name + "- " + dto.ICDDTO.IcdCodeDescription;
+				}
+				
+				return result;
+			}
+			
+			protected function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!dto.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+						
+			 protected function delete_Record():void
+			{
+				 UtilityFunctions.AskMessage("Do you want to delete selected record?", function():void
+				 {
+					 dto.IsDeleted = true;
+					 dto.IsDirty = true;
+					 dto.ModifiedAt = new Date();
+					 dto.ModifiedBy = model.LoggedInUserId;
+					 
+					 if(null != model.GeneralHistoryList)
+						 model.GeneralHistoryList.removeAll();
+					 else
+						 model.GeneralHistoryList = new ArrayCollection();
+					 
+					 model.GeneralHistoryList.addItem(dto);
+					 					 
+					 saveGeneralHistory();
+				 });
+			}
+			
+			private function saveGeneralHistory():void
+			{
+				var medicalHistoryRecord:MedicalHistoryDTO = new MedicalHistoryDTO();
+				if( null != model.GeneralHistoryList && model.GeneralHistoryList.length)
+				{
+					medicalHistoryRecord = model.GeneralHistoryList.getItemAt(0) as MedicalHistoryDTO;
+				}
+				var evt:SaveMedicalHistoryEvent = new SaveMedicalHistoryEvent(model.patientDTO.ID, model.ClinicBranchIdSeq, medicalHistoryRecord, clearGeneralHistory );
+				CairngormEventDispatcher.getInstance().dispatchEvent( evt );
+			}
+			
+			private function clearGeneralHistory():void
+			{
+				//update skins for icons....
+				dispatchEvent(new Event("clearNotesEvent",true, true ));
+				
+				//update controls
+				dispatchEvent( new Event("data_added", true, true) );
+				
+				loadMedicalHistory();
+			}
+			
+			private function loadMedicalHistory():void
+			{
+				var loadMedicalHistoryByPatientIdEvent:LoadMedicalHistoryByPatientIdEvent = new LoadMedicalHistoryByPatientIdEvent();
+				CairngormEventDispatcher.getInstance().dispatchEvent( loadMedicalHistoryByPatientIdEvent );
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number,  unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="35" >
+			
+		<s:HGroup left="0" right="76" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="6"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label text="{getDispLabel(dto)}" toolTip="{getDispTooltip(dto)}"  color="#333333" fontFamily="CalibriCFF"	 fontSize="14" showTruncationTip="true"/>
+			<s:Label id="id_IsActivelbl" text="[Active]" fontFamily="CalibriCFF" fontSize="14" color="0xFF0000"
+					 visible="{dto.isActive}" includeInLayout="{dto.isActive}"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image source="@Embed('assets/images/new.png')"/>
+			
+			<s:ToggleButton id="id_btnDictation"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inDictationMode}"
+							buttonMode="true" toolTip="Record Level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+							includeInLayout="{id_btnDictation.visible}"
+							/>
+			
+			<s:ToggleButton id="id_btnNote"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inNoteMode}"
+							buttonMode="true" toolTip="Record Level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+							includeInLayout="{id_btnNote.visible}"
+							/>
+			
+			<s:Button id="id_delete"
+					  click="delete_Record()"
+					  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin" 
+					  buttonMode="true" useHandCursor="true"
+					  toolTip="{'Delete ' + dto.medicalhistorytype.Name + ' history' }"	  
+					  />
+		</s:HGroup>
+		
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="30"  visible="{dto.inEditMode}" includeInLayout="{dto.inEditMode}" >
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"  />
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" noteTooltip="{dto.Note}" note="@{dto.Note}"
+											 isSaveButtonVisible="false"/>
+	</s:Group>
+</s:ItemRenderer>

@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:component="com.gazuntite.view.patient.component.*"
+				xmlns:components="com.gazuntite.components.*" 
+				xmlns:allergy="com.gazuntite.view.patient.input.history.allergy.*"
+				xmlns:allergy1="com.gazuntite.view.patient.component.itemrenderer.allergy.*" 
+				autoDrawBackground="false"
+				initialize="init()" creationComplete="cc()" width="100%" xmlns:dictation="com.gazuntite.components.dictation.*"
+				>
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.pmh.Allergy.AllergyDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.controls.extended.components.PopupGroup;
+			import com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin;
+			import com.gazuntite.skins.controls.container.input.RecordEditPopupSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.view.patient.event.AllergyDeleteEvent;
+			import com.gazuntite.view.patient.input.history.Immunization.PatientInputHistoryImmunizationEvent;
+			import com.gazuntite.view.patient.input.history.allergy.PatientInputHistoryAllergyEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			
+			[Bindable]	public var dto:AllergyDTO;
+			[Bindable]	public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			private var gaxenAllergyID:String;
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function cc():void
+			{
+				
+			}
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				dto = value as AllergyDTO;
+				
+				if (value == null || null == dto) //value as AllergyDTO fails somw how ... why object is being passed here in place of AllergyDTO ?
+					return;
+				
+				gaxenAllergyID 				= dto.GaxenAllergyID;
+				
+				if (dto.isNKDA)
+					dto.inEditMode 			= false;
+				
+				/**
+				 * Everytime the data is assigned to the renderer, 
+				 * its notes and dictation buttons mode should be reset either in seleced on deselected state
+				 * */
+				setDictationNoteButtonMode();
+				invalidateDisplayList();
+			}
+			
+			protected function toggleEditView():void
+			{
+				if (dto.isNKDA)			//Alvi-- in case of NKDA the Expanded mode is Not Allowed
+					return;
+				
+				dto.inEditMode = !dto.inEditMode;
+				
+				if (!dto.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!dto.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function showGlow():void
+			{
+				if (!dto)
+					return;
+				
+				if (dto.inEditMode)
+				{
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+			
+			protected function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!dto.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+			
+			public function getDispLabel(dataModel:AllergyDTO):String
+			{
+				var result:String = "";
+				
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if (dto.isNKDA)
+				{
+					result = dto.seriesNumber.toString() + ". No Known Drug Allergy";
+				}
+				else
+				{
+					result =  dto.seriesNumber.toString() + ". "+ dto.AllergyName;
+				}
+				
+				return result;
+			}
+			
+			public function getHeaderTooltip(dataModel:AllergyDTO):String
+			{
+				var result:String = "";
+				
+				if (dto == null)
+				{
+					result = "";
+				}
+				else if (dto.isNKDA)
+				{
+					result = "No Known Drug Allergy";
+				}
+				else
+				{
+					result = dto.AllergyName;
+				}
+				
+				return result;
+			}
+			
+			protected function delete_Record():void
+			{
+				//var allDelEvent:AllergyDeleteEvent = new AllergyDeleteEvent(gaxenAllergyID);
+				//dispatchEvent(allDelEvent);
+				
+				var ev:PatientInputHistoryAllergyEvent = new PatientInputHistoryAllergyEvent(PatientInputHistoryAllergyEvent.PATIENT_INPUT_ALLERGY_DELETE_EVENT, true);
+				ev.gaxenAllergyID = gaxenAllergyID;
+				
+				dispatchEvent(ev);
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number,  unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private var popup:PopupGroup;
+			
+			protected function id_btnEdit_clickHandler(event:MouseEvent):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					removeEditPopup();
+					return;
+				}
+				
+				popup 								= new PopupGroup();
+				var editor:AllergyItemEditView		= new AllergyItemEditView();
+				editor.dto 							= dto;
+				editor.width  						= this.width;
+				editor.addEventListener( "saveStatus", function(event:Event):void
+				{
+					removeEditPopup();
+					toggleEditView();
+				});
+				editor.setStyle('skinClass', RecordEditPopupSkin);
+				popup.addElement( editor );
+				popup.ShowPopup( this );
+				editor.uiReaction.text 				= dto.Reaction;
+				editor.id_allergyList.text 			= dto.AllergyName;
+				var pt:Point 						= event.currentTarget.localToGlobal( new Point(event.currentTarget.x, event.currentTarget.y)); 
+				popup.move( 22, pt.y + event.currentTarget.height );
+				
+				popup.addEventListener(CloseEvent.CLOSE, function (event:Event):void
+				{
+					id_btnEdit.selected 			= false;
+				});
+				
+				id_btnEdit.selected 				= true;
+				
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				FlexGlobals.topLevelApplication.addEventListener(MouseEvent.CLICK, removeEditPopup);
+			}
+			
+			private function removeEditPopup(event:Event = null):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					popup.removePopup();
+					FlexGlobals.topLevelApplication.removeEventListener(MouseEvent.CLICK, removeEditPopup);
+					popup = null;
+					id_btnEdit.selected 			= false;
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="8" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="8" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="3" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="26" >
+		
+		<s:HGroup left="0" right="76" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="6"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label text="{getDispLabel(dto)}" toolTip="{getHeaderTooltip(dto)}" color="#333333" fontFamily="CalibriCFF" fontSize="14" showTruncationTip="true"/>
+			<s:Label id="id_IsActivelbl" text="[Active]" fontFamily="CalibriCFF" fontSize="14" color="0xFF0000"
+					 visible="{dto.isActive}" includeInLayout="{dto.isActive}"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image buttonMode="true" source="@Embed('assets/images/new.png')"	 useHandCursor="true" />
+			<s:ToggleButton id="id_btnEdit"
+							click="id_btnEdit_clickHandler(event)"
+							buttonMode="true" toolTip="Edit the Record"
+							skinClass="com.gazuntite.skins.controls.toggleButtonSkin.input.EditRecordArrowTBSkin"
+							/>
+			<s:ToggleButton id="id_btnDictation"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inDictationMode}"
+							toolTip="Record Level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+							visible="{!dto.isNKDA}" includeInLayout="{!dto.isNKDA}"
+							/>
+			
+			<s:ToggleButton id="id_btnNote"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inNoteMode}"
+							toolTip="Record Level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+							visible="{!dto.isNKDA}" includeInLayout="{!dto.isNKDA}"
+							/>
+			<s:Button id="id_delete"
+					  click="delete_Record()" toolTip="Delete Allergy" 
+					  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin" 
+					  />
+		</s:HGroup>
+		
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="21"  visible="{dto.inEditMode}" includeInLayout="{dto.inEditMode}">
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"/>
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" noteTooltip="{dto.Note}" note="@{dto.Note}"
+											isSaveButtonVisible="false"/>
+		<allergy1:AllergyItemExpandView width="100%" dto="{dto}" 
+										skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin"/>
+	</s:Group>
+</s:ItemRenderer>

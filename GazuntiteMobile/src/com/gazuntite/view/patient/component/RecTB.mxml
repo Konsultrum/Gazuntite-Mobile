@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Skin xmlns:s="library://ns.adobe.com/flex/spark"
+		xmlns:fx="http://ns.adobe.com/mxml/2009"
+		width="106" height="58">
+	<fx:Metadata>[HostComponent("spark.components.ToggleButton")]</fx:Metadata>
+	<s:states>
+		<s:State name="up"/>
+		<s:State name="over"/>
+		<s:State name="down"/>
+		<s:State name="disabled"/>
+		<s:State name="upAndSelected"/>
+		<s:State name="overAndSelected"/>
+		<s:State name="downAndSelected"/>
+		<s:State name="disabledAndSelected"/>
+	</s:states>
+	<s:Rect x="64.5" y="1.5" width="19" height="19" radiusX="2"
+			visible.disabledAndSelected="false"
+			visible.downAndSelected="false"
+			visible.overAndSelected="false"
+			visible.upAndSelected="false">
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry alpha="1.0" color="#7A7A7A" ratio="0"/>
+				<s:GradientEntry alpha="1.0" color="#444545" ratio="0.5254901960784314"/>
+				<s:GradientEntry alpha="1.0" color="#2D2E2E" ratio="0.5294117647058824"/>
+				<s:GradientEntry alpha="1.0" color="#3F4040" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:DropShadowFilter alpha="0.25" angle="90" blurX="0" blurY="0" color="#FFFFFF" distance="1" hideObject="false" inner="false" knockout="false" quality="3" strength="1"/>
+			<s:DropShadowFilter alpha="0.5" angle="90" blurX="1" blurY="1" color="0x000000" distance="1" hideObject="false" inner="true" knockout="false" quality="3" strength="1"/>
+		</s:filters>
+		<s:stroke>
+			<s:LinearGradientStroke caps="none" joints="miter" miterLimit="4" rotation="90" weight="1">
+				<s:GradientEntry alpha="1.0" color="#333333" ratio="0"/>
+				<s:GradientEntry alpha="1" color="#000000" ratio="1"/>
+			</s:LinearGradientStroke>
+		</s:stroke>
+	</s:Rect>
+	<s:BitmapImage x="70" y="6" smooth="true" source="@Embed('/assets/images/Dictation1.png')"
+				   visible.disabledAndSelected="false"
+				   visible.downAndSelected="false"
+				   visible.overAndSelected="false">
+		<s:filters>
+			<s:GlowFilter alpha="1.0" blurX="6.0" blurY="6.0" color="#FFFFFF" inner="true"
+						  knockout="false" quality="3" strength="6"/>
+			<s:DropShadowFilter alpha="1" angle="90" blurX="0" blurY="0" color="#000000"
+								distance="1" hideObject="false" inner="false" knockout="false"
+								quality="3" strength="1"/>
+		</s:filters>
+	</s:BitmapImage>
+	<s:Path visible="false" x="57.343" y="0.151" width="33.483" height="29.426"
+			data="M 18.442 15.385 C 18.442 17.608 20.26 19.426 22.483 19.426 C 15.603 19.426 6.88 19.426 0 19.426 C 2.223 19.426 4.042 17.608 4.042 15.385 L 4.042 9.667 L 4.042 7.431 L 4.042 0.979 C 4.042 0.44 4.637 0 5.366 0 L 17.118 0 C 17.846 0 18.442 0.44 18.442 0.979 L 18.442 7.431 L 18.442 9.667 L 18.442 15.385 Z">
+		<s:fill>
+			<s:SolidColor color="#FFB3A0"/>
+		</s:fill>
+	</s:Path>
+	<s:Rect includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected" x="0"
+			y="28" width="106" height="30" radiusX="5">
+		<s:fill>
+			<s:SolidColor color="#FFB3A0"/>
+		</s:fill>
+		<s:filters>
+			<s:DropShadowFilter alpha="0.75" angle="90" blurX="4.0" blurY="4.0" color="#000000"
+								distance="2" hideObject="false" inner="false" knockout="false"
+								quality="2" strength="1"/>
+		</s:filters>
+	</s:Rect>
+	<s:Path includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected" x="59.213"
+			y="1.018"
+			data="M 8.877 0 L 20.733 0 C 23.301 0 24.716 1.415 24.716 3.982 L 24.716 22.84 C 24.716 27.744 31.565 27.934 28.998 27.934 L 0.613 27.934 C -1.954 27.934 4.895 27.641 4.895 22.996 L 4.895 3.982 C 4.895 1.415 6.31 0 8.877 0 Z">
+		<s:fill>
+			<s:SolidColor color="#FFB3A0"/>
+		</s:fill>
+	</s:Path>
+	<s:BitmapImage includeIn="disabledAndSelected,downAndSelected,overAndSelected,upAndSelected"
+				   x="70" y="6" smooth="true" source="@Embed('/assets/images/Dictation1.png')">
+		<s:filters>
+			<s:DropShadowFilter alpha="1" angle="90" blurX="0" blurY="0" color="#000000"
+								distance="1" hideObject="false" inner="false" knockout="false"
+								quality="3" strength="1"/>
+		</s:filters>
+	</s:BitmapImage>
+</s:Skin>

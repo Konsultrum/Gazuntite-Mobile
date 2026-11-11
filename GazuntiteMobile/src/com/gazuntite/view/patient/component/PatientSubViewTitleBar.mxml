@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.button.bar.PatientSubViewTitleBarSkin" 
+					  xmlns:component="com.gazuntite.view.patient.component.*"
+					  height="26"
+					  doubleClickEnabled="true"
+					  doubleClick="onDoubleClick(event)"
+					  creationComplete="cc()"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.event.FlipViewEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.physical.PatientInputPhysicalViewModel;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			[Bindable]	public var label:String = "";
+			[Bindable]	public var sectionNumber:int = 1;// that show in center with selected
+			[Bindable]	public var maxSectionCounter:int = 4;
+			[Bindable]	public var showInputPart:Boolean = false;
+			[Bindable]	public var showHistoryPart:Boolean = false;
+			[Bindable]	public var showMetric:Boolean = false;
+			[Bindable]	public var inputCounter:Number = 0;
+			[Bindable]	public var dictationNoteViewModel:PatientDictationNoteViewModel;
+			[Bindable]	public var showFlipButton:Boolean = true;
+			[Bindable]	public var showAllNormalButton:Boolean = false;
+			[Bindable]	public var isPhysicalHeader:Boolean = false;
+			[Bindable]	public var viewModel:PatientInputPhysicalViewModel = PatientInputPhysicalViewModel.getInstance();
+			[Bindable]	private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			private var _showDiabetesButton:Boolean = false;
+			private var m_MainSectionLabel:String = "";
+			
+			[Bindable]
+			public function get MainSectionLabel():String
+			{
+				return m_MainSectionLabel;
+			}
+			
+			public function set MainSectionLabel(value:String):void
+			{
+				m_MainSectionLabel = value;
+			}
+			
+			[Bindable]
+			public function get showDiabetesButton():Boolean
+			{
+				return _showDiabetesButton;
+			}
+			
+			public function set showDiabetesButton(value:Boolean):void
+			{
+				if(isPhysicalHeader)
+					_showDiabetesButton = value;
+			}
+			
+			private function cc():void
+			{
+				if(sectionNumber == 1){
+					id_LeftButtons.visible = false;
+				}
+				else
+					id_LeftButtons.visible = true;
+				
+				callLater(function():void{
+					setleftButtons();
+				});
+				
+			}
+			protected function getFlipTooltip(isInput:Boolean, isHistory:Boolean):String
+			{
+				var result:String = "";
+				if (showInputPart)
+				{
+					result = "Flip to History";
+				}
+				else if (showHistoryPart)
+				{
+					result = "Flip to Input";
+				}
+				return result;
+			}
+			
+			protected function onDoubleClick(event:MouseEvent):void
+			{
+				this.dispatchEvent(new FlipViewEvent());
+			}
+			
+			protected function showCounter(p:Array):Boolean
+			{
+				var result:Boolean = true;
+				if (inputCounter==0
+					//					|| !uiOptionButton.selected
+				)
+				{
+					result = false;
+				}
+				
+				return result;
+			}
+			
+			protected function id_diabetesRB_changeHandler(event:Event):void
+			{
+				if(id_DiabetesNormalRB.selected)
+					dispatchEvent(new Event('NoDiabetes',true));
+				else if(id_DiabetesRB.selected)
+					dispatchEvent(new Event('Diabetes',true)); 
+			}
+			
+			
+			protected function id_sectionNumber_clickHandler(event:MouseEvent):void
+			{
+				if(!id_sectionNumber.selected)
+					id_sectionNumber.selected = true;
+			}
+			
+			protected function gotoSection_clickHandler(sectionNumber:int):void
+			{
+				if(MainSectionLabel == 'History')
+				{
+					switch(sectionNumber)
+					{
+						case 1:
+							viewModel.selectedViewLabel = 'Allergies';
+							break;
+						case 2:
+							viewModel.selectedViewLabel = 'Comprehensive HX';
+							break;
+						case 3:
+							viewModel.selectedViewLabel = 'Chronic Medication';
+							break;
+						case 4:
+							viewModel.selectedViewLabel = 'Immunization';
+							break;
+					}	
+				}
+				else if (MainSectionLabel == 'Physical')
+				{
+					switch(sectionNumber)
+					{
+						case 1:
+							viewModel.selectedViewLabel = 'Vitals';
+							break;
+						case 2:
+							viewModel.selectedViewLabel = 'Chief Complaint/HPI';
+							break;
+						case 3:
+							viewModel.selectedViewLabel = 'Review of System';
+							break;
+						case 4:
+							viewModel.selectedViewLabel = 'Physical';
+							break;
+						case 5:
+							viewModel.selectedViewLabel = 'In-House Lab';
+							break;
+					}	
+				}
+				else if (MainSectionLabel == 'Assessment')
+				{
+					switch(sectionNumber)
+					{
+						case 1:
+							viewModel.selectedViewLabel = 'Diagnosis';
+							break;
+						case 2:
+							viewModel.selectedViewLabel = 'Treatment';
+							break;
+						case 3:
+							viewModel.selectedViewLabel = 'Plan';
+							break;
+					}	
+				}
+			}
+			
+			private function setleftButtons():void
+			{
+				for(var i:int = 0; i < maxSectionCounter; i++)
+				{
+					var btn:Button = Button(id_LeftButtons.getChildAt(i));
+					var tempNumber:int = int(btn.label);
+					if(tempNumber < sectionNumber)
+					{
+						btn.visible = true;
+						btn.includeInLayout = true;
+						btn.toolTip = UtilityFunctions.getInputSectionTooltip(i, MainSectionLabel);
+					}
+				}
+				
+				for(var j:int = 0; j < maxSectionCounter; j++)
+				{
+					var btn2:Button = Button(id_rightButtons.getChildAt(j));
+					tempNumber = int(btn2.label);
+					if(tempNumber > sectionNumber)
+					{
+						btn2.visible = true;
+						btn2.includeInLayout = true;
+						btn2.toolTip = UtilityFunctions.getInputSectionTooltip(j, MainSectionLabel);
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Binding source="model.ShowDiabeticControl" destination="showDiabetesButton"/>
+	
+	<fx:Declarations>
+		<s:RadioButtonGroup id="id_diabetesRB" change="id_diabetesRB_changeHandler(event)" />
+	</fx:Declarations>
+	<!-- Left Button Bar -->
+	<s:HGroup id="id_LeftButtons" left="4" height="100%" verticalAlign="middle" gap="3">
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="1" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(1)" />
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="2" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(2)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="3" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(3)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="4"  visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(4)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="5" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(5)"/>
+	</s:HGroup>
+	
+	<s:HGroup horizontalCenter="0" verticalCenter="0" height="100%" verticalAlign="middle">
+		<!-- Section Number Button in the center -->
+		<s:ToggleButton id="id_sectionNumber"
+						selected="true"
+						skinClass="com.gazuntite.skins.controls.toggleButtonSkin.input.NavigationTBSkin" 
+						label="{sectionNumber}" click="id_sectionNumber_clickHandler(event)" 
+						toolTip="{label}"/>
+		<!-- Section Name in the center -->
+		<s:Label text="{label}" 
+				 fontSize="16" color="#FFFFFF" fontFamily="CalibriCFFBold" typographicCase="uppercase"/>
+		
+	</s:HGroup>
+	
+	<!-- ? -->
+	<s:Rect verticalCenter="{uiOptionButton.selected?2:0}" right="32" width="40" height="20" radiusX="10"
+			visible="{showCounter([inputCounter, uiOptionButton.selected])}"
+			>
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry alpha="1.0" color="#D70000" ratio="0"/>
+				<s:GradientEntry alpha="1.0" color="#A00000" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+		<s:filters>
+			<s:BevelFilter angle="90" blurX="1" blurY="1" distance="1"
+						   highlightAlpha="0.5" highlightColor="#FFFFFF" knockout="false"
+						   quality="2" shadowAlpha="0.25" shadowColor="#CCCCCC" strength="1"
+						   type="inner"/>
+		</s:filters>
+	</s:Rect>
+	
+	<!-- ? -->
+	<s:RichText id="uiCounter"
+				verticalCenter="{uiOptionButton.selected?2:0}" right="52" color="#FFFFFF" 
+				fontSize="13" lineHeight="140%" tabStops="S0" text="{'0'+inputCounter.toString()}"
+				whiteSpaceCollapse="preserve" fontFamily="CalibriCFF"
+				visible="{showCounter([inputCounter, uiOptionButton.selected])}"
+				/>
+	
+	<!-- Option Button for VITAL View-->
+	<s:ToggleButton id="uiEnglishMetric" 
+					right="185" verticalCenter="0" buttonMode="true" toolTip="English/Metric" 
+					visible="{showMetric}" includeInLayout="{showMetric}"
+					skinClass="com.gazuntite.skins.controls.toggleButtonSkin.EnglishMetricTBSkin"
+					/>
+	
+	<!-- Option Button for ROS & PHYSICALS -->
+	<s:SkinnableContainer includeInLayout="{showDiabetesButton}" visible="{showDiabetesButton}"
+						  skinClass="com.gazuntite.skins.controls.container.BlueRadioButtonBG"
+						  height="22" width="78" right="185" verticalCenter="0">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" gap="0" horizontalAlign="center"/>
+		</s:layout>
+		<s:RadioButton id="id_DiabetesNormalRB" 
+					   groupName="id_diabetesRB" skinClass="com.gazuntite.skins.controls.radioButton.NormalRadioButtonSkin"
+					   toolTip="Normal" selected="true" />
+		<s:RadioButton id="id_DiabetesRB" 
+					   label="Diabetes" 
+					   groupName="id_diabetesRB" skinClass="com.gazuntite.skins.controls.radioButton.DiabeticRadioButtonSkin"
+					   toolTip="Diabetics" />
+	</s:SkinnableContainer>
+	
+	<!-- All-Normal button for ROS & PHYSICALS -->
+	<s:Button id="id_allNormalButton"
+			  right="185" verticalCenter="0"
+			  skinClass="com.gazuntite.skins.controls.button.input.AllNormalBtnSkin"
+			  toolTip="All Normal" buttonMode="true" useHandCursor="true"
+			  visible="{showAllNormalButton &amp;&amp; !id_DiabetesRB.selected}" includeInLayout="{showAllNormalButton &amp;&amp; !id_DiabetesRB.selected}"/>
+	
+	<!-- Left Button Bar -->
+	<s:HGroup id="id_rightButtons" right="60" height="100%" verticalAlign="middle" horizontalAlign="right" gap="3">
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="1" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(1)" />
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="2" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(2)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="3" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(3)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="4" visible="false" includeInLayout="false" 
+				  click="gotoSection_clickHandler(4)"/>
+		<s:Button skinClass="com.gazuntite.skins.controls.button.input.NavigationButtonSkin" 
+				  label="5" visible="false" includeInLayout="false"
+				  click="gotoSection_clickHandler(5)"/>
+	</s:HGroup>
+	
+	<!-- Button More Option -->
+	<s:ToggleButton id="uiOptionButton"
+					verticalCenter="{uiOptionButton.selected?0:0}" 
+					skinClass="com.gazuntite.skins.controls.button.patient.PatientOptionToggleButtonSkin"
+					buttonMode="true" toolTip="More Options" right="28" 
+					selected="@{dictationNoteViewModel.visible}"
+					/>
+	
+	<!-- INPUT to HISTORY switch button-->
+	<component:FlipViewButton	right="4"	verticalCenter="0"	visible="{showFlipButton}"	toolTip="{getFlipTooltip(showInputPart, showHistoryPart)}"	/>
+	
+</s:SkinnableContainer>

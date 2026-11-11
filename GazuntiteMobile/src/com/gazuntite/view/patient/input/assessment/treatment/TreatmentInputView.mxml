@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  skinClass="com.gazuntite.skins.controls.container.PatientInputSubViewContainerSkin" 
+					  xmlns:presprection="com.gazuntite.view.patient.input.assessment.treatment.presprection.*"
+					  xmlns:procedure="com.gazuntite.view.patient.input.assessment.treatment.procedure.*"
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:components="com.gazuntite.controls.extended.components.*"
+					  creationComplete="cc()" xmlns:components1="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.ModuleNoteDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			import com.gazuntite.patient.visit.utils.QIUtilityFunctions;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.treatment.procedure.PatientInputAssessmentProcedureEvent;
+			import com.gazuntite.view.patient.input.assessment.treatment.procedure.PatientInputAssessmentProcedureViewModel;
+			
+			import mx.events.FlexEvent;
+			
+			[Bindable]	
+			public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var procedureViewModel:PatientInputAssessmentProcedureViewModel = PatientInputAssessmentProcedureViewModel.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputAssessmentTreatmentViewModel = PatientInputAssessmentTreatmentViewModel.getInstance();
+			
+			[Bindable]
+			private var notesDTO:ModuleNoteDTO;
+			
+			private function cc():void
+			{
+				notesDTO = QIUtilityFunctions.getModuleNoteDTO(Constants.TREATMENT_MODULE_NAME);
+				
+				addEventListener(PatientInputAssessmentProcedureEvent.PATIENT_INPUT_PROCEDURE_ITEM_KEY_UP_EVENT, 
+					patientInputProcedureItemKeyUpHandler, false, 0, true);
+				
+				addEventListener(PatientDictationNoteViewEvent.PATIENT_DICTATION_NOTE_SAVE_EVENT, patientDictationNoteSaveHandler, false, 0, true);
+			}
+			
+			private function patientInputProcedureItemKeyUpHandler(event:PatientInputAssessmentProcedureEvent):void
+			{
+				if (!event.searchString)
+					return;
+				
+				if (event.searchString.length < 2 || event.searchString.length > 10)
+					return;
+				
+				if (event.searchString.length % 2 == 0)
+					return;
+				
+				procedureViewModel.loadMedicalCPTCodeForInputView(event.searchString, event.searchType);
+			}
+			
+			private function patientDictationNoteSaveHandler(event:PatientDictationNoteViewEvent):void
+			{
+				event.moduleName = Constants.TREATMENT_MODULE_NAME;
+				event.data = notesDTO;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="1" paddingBottom="10"/>
+	</s:layout>
+	
+	<component:PatientSubViewTitleBar width="100%" label="TREATMENT"  maxSectionCounter="3"  sectionNumber="2" showInputPart="true"
+									  MainSectionLabel="Assessment"
+									  dictationNoteViewModel="{viewModel.dictationNoteViewModel}"/>
+	<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel.dictationNoteViewModel}"
+										  isSectionLevel="true" note="@{notesDTO.Note}"/>
+	
+	<s:VGroup width="100%" height="100%" gap="-5" paddingTop="10" paddingLeft="2" paddingRight="2" horizontalAlign="center">
+		<s:TabBar dataProvider="{uiViewStack}" labelField="id" skinClass="com.gazuntite.view.patient.component.PinkTabBarSkin"/>
+		
+		<s:SkinnableContainer width="100%" height="100%" skinClass="com.gazuntite.skins.controls.container.PinkBackgroundSkin">
+			<components:LabelViewStack id="uiViewStack" width="100%" height="100%" backgroundAlpha="0" borderVisible="false"
+									   selectedIndex="@{viewModel.treatmentInputTabSelectedIdx}">
+				<s:ArrayList>
+					<presprection:PresprectionInputView id="Prescription" width="100%" height="100%"/>
+					<procedure:ProcedureInputView id="Procedure" width="100%" height="100%" />
+				</s:ArrayList>
+			</components:LabelViewStack>
+		</s:SkinnableContainer>
+	</s:VGroup>
+	
+</s:SkinnableContainer>

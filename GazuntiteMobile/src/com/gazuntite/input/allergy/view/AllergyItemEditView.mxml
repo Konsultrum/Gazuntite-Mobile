@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:component="com.gazuntite.common.view.component.*"
+		 paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4" xmlns:dictation="com.gazuntite.components.dictation.*"
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.view.component.searchInputSupportClasses.ISearchInputManager;
+			import com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputViewModel;
+			import com.gazuntite.temp.integration.SearchInputManagerGeneral;
+			import com.gazuntite.temp.model.TempDataModel;
+			import com.gazuntite.temp.view.PlaceHolderCallout;
+			import com.gazuntite.view.patient.input.history.allergy.PatientInputHistoryAllergyViewModel;
+			
+			[Bindable]
+			public var searchInputManager:ISearchInputManager = new SearchInputManagerGeneral(TempDataModel.getInstance().allergySource);
+			[Bindable]
+			public var searchViewModel:SearchInputViewModel = new SearchInputViewModel();
+			
+			[Bindable]
+			public var showNkda:Boolean = true;
+			public var showDelete:Boolean = false;
+			
+			[Bindable]
+			public var viewModel:PatientInputHistoryAllergyViewModel = PatientInputHistoryAllergyViewModel.getInstance();
+			
+
+			protected function showNote(event:MouseEvent):void
+			{
+				viewModel.newAllergyInputDictationNoteViewModel.inlineEditing = false;
+				viewModel.newAllergyInputDictationNoteViewModel.inNoteMode = true;
+				viewModel.newAllergyInputDictationNoteViewModel.visible = true;
+//				var call:PlaceHolderCallout = new PlaceHolderCallout();
+//				call.text = "Note Content Placeholder";
+//				call.open(event.target as DisplayObjectContainer);
+			}
+			protected function showDictation(event:MouseEvent):void
+			{
+				viewModel.newAllergyInputDictationNoteViewModel.inlineEditing = false;
+				viewModel.newAllergyInputDictationNoteViewModel.inDictationMode = true;
+				viewModel.newAllergyInputDictationNoteViewModel.visible = true;
+//				var call:PlaceHolderCallout = new PlaceHolderCallout();
+//				call.text = "Dictation Content Placeholder";
+//				call.open(event.target as DisplayObjectContainer);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:HGroup verticalAlign="middle" width="100%">
+		<s:HGroup width="50%" verticalAlign="middle">
+			<s:CheckBox selected="true"
+						visible="{showNkda}" includeInLayout="{showNkda}"
+						/>
+			<s:Label text="NKDA" fontWeight="bold"
+					 visible="{showNkda}" includeInLayout="{showNkda}"
+					 />
+			<s:Spacer width="100%"/>
+			<component:DateInput prompt="OnSet"/>
+		</s:HGroup>
+		<s:BitmapImage source="@Embed('/assets/images/dot_red.png')"
+					   />
+		<component:SearchInput 
+			width="50%"
+			prompt="Select Allergy" promptTextColor="#999999"
+			viewModel="{searchViewModel}" searchInputManager="{searchInputManager}"/>
+	</s:HGroup>
+	<s:HGroup width="100%" verticalAlign="middle">
+		<s:HGroup width="50%" verticalAlign="middle">
+			<s:BitmapImage source="@Embed('/assets/images/checkmark_green.png')"
+						   />
+			<s:TextInput width="100%" prompt="Reaction" enter="stage.focus = null"/>
+		</s:HGroup>
+		<s:HGroup width="50%" verticalAlign="middle">
+			<s:Label text="Active:"/>
+			<s:ToggleSwitch id="uiActive" skinClass="com.gazuntite.common.view.skin.ToggleSwitchYesNoSkin" selected="true"/>
+			<s:Spacer width="100%"/>
+			<s:Button label="Note" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+					  height="100%"
+					  click="showNote(event)"
+					  />
+			
+			<s:Button label="Dict" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+					  click="showDictation(event)"
+					  />
+			<s:Button label="Save" icon="place-holder.png" iconPlacement="top" fontSize="9" fontWeight="normal"
+					  />
+		</s:HGroup>
+	</s:HGroup>
+	<dictation:PatientDictationNoteView id="dictationNoteView" isSectionLevel="true" 
+										width="100%" viewModel="{viewModel.newAllergyInputDictationNoteViewModel}" isSaveButtonVisible="false"/>
+</s:VGroup>

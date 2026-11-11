@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx" 
+					  xmlns:components="com.gazuntite.controls.extended.components.*" 
+					  xmlns:comprehensive="com.gazuntite.view.patient.input.history.comprehensive.*" 
+					  xmlns:component="com.gazuntite.view.patient.component.*" 
+					  xmlns:general="com.gazuntite.view.patient.input.history.comprehensive.general.*"
+					  xmlns:general1="com.gazuntite.input.comprehensive.view.general.*" 
+					  xmlns:component1="com.gazuntite.input.comprehensive.view.component.*"
+					  >
+	<s:layout>
+		<s:HorizontalLayout
+			gap="-2" horizontalAlign="left"
+			paddingLeft="4" paddingRight="4" paddingTop="4" paddingBottom="4"
+			/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:VGroup
+		gap="0"
+		width="200"
+		>
+		<component1:SideTabButton label="Medical" width="100%"
+								 />
+		<component1:SideTabButton label="Childhood" width="100%"
+								 />
+		<component1:SideTabButton label="Surgical" width="100%"
+								 />
+		<component1:SideTabButton label="Other" width="100%"
+								 />
+	</s:VGroup>
+	<s:SkinnableContainer skinClass="com.gazuntite.input.comprehensive.skin.GreyBackgroundSkin"
+		width="100%" minHeight="150"
+		>
+		<s:layout>
+			<s:VerticalLayout horizontalAlign="center" verticalAlign="middle"
+				/>
+		</s:layout>
+		<general1:GeneralItemEditDetailView id="id_General"
+			width="100%" height="100%"/>
+	</s:SkinnableContainer>
+</s:SkinnableContainer>

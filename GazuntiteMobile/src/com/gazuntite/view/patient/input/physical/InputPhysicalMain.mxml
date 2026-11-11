@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx" 
+		 xmlns:supportclass="com.gazuntite.view.patient.supportclass.*" 
+		 xmlns:history="com.gazuntite.view.patient.input.history.*" 
+		 xmlns:chronic="com.gazuntite.view.patient.input.history.chronic.*" 
+		 xmlns:Immunization="com.gazuntite.view.patient.input.history.Immunization.*" 
+		 xmlns:comprehensive="com.gazuntite.view.patient.input.history.comprehensive.*" 
+		 xmlns:allergy="com.gazuntite.view.patient.input.history.allergy.*" 
+		 xmlns:vitals="com.gazuntite.view.patient.input.physical.vitals.*" 
+		 xmlns:reviewofsystem="com.gazuntite.view.patient.input.physical.reviewofsystem.*" 
+		 xmlns:chiefcomplaint="com.gazuntite.view.patient.input.physical.chiefcomplaint.*" 
+		 xmlns:inHouseLab="com.gazuntite.view.patient.input.physical.inHouseLab.*"
+		 xmlns:inhouselab="com.gazuntite.view.patient.input.physical.inhouselab.*" 
+		 xmlns:physical="com.gazuntite.view.patient.input.physical.physical.*" 
+		 >
+	<fx:Script>
+		<![CDATA[
+			import com.adobe.cairngorm.control.CairngormEventDispatcher;
+			import com.gazuntite.patient.visit.event.physical.physical.LoadPhysicalCategoryTypesEvent;
+			import com.gazuntite.patient.visit.event.physical.ros.LoadROSCategoryTypesEvent;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.Constants;
+			[Bindable]
+			public var viewModel:PatientInputPhysicalViewModel = PatientInputPhysicalViewModel.getInstance();
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			
+			protected function uiViewContainer_viewSelectedHandler(event:Event):void
+			{
+				switch( viewModel.selectedViewLabel )
+				{
+					case "Review of System":
+						loadROS();
+						break;
+					case "Physical":
+						loadPhysical();
+						break;
+				}
+			}
+			
+			///////////////////////////// Review of System ////////////////////
+			
+			public function loadROS():void
+			{
+				if( null == model.rosDTOList || 0 == model.rosDTOList.length )
+				{
+					var lros:LoadROSCategoryTypesEvent = new LoadROSCategoryTypesEvent( false );
+					CairngormEventDispatcher.getInstance().dispatchEvent( lros );
+				}
+			}
+			
+			public function loadPhysical():void
+			{
+				if( null == model.physicalDTOList || 0 == model.physicalDTOList.length )
+				{
+					var lphysical:LoadPhysicalCategoryTypesEvent = new LoadPhysicalCategoryTypesEvent( false );
+					CairngormEventDispatcher.getInstance().dispatchEvent( lphysical );
+				}
+			}
+			
+			///////////////////////////// Review of System ////////////////////
+			
+		]]>
+	</fx:Script>
+	<s:layout>
+		<s:HorizontalLayout	paddingLeft="4" paddingRight="4" paddingBottom="3" paddingTop="3"/>
+	</s:layout>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<supportclass:PatientSubViewContainer id="uiViewContainer" viewSelected="uiViewContainer_viewSelectedHandler(event)" 
+										  width="100%" height="100%">
+		<supportclass:inputViews>
+			<supportclass:FlipViewContainer menuLabel="Vitals" selected="false">
+				<supportclass:flipViews>
+					<vitals:VitalsInputView/>
+					<vitals:VitalsHistoryView/>
+				</supportclass:flipViews>
+			</supportclass:FlipViewContainer>
+			<supportclass:FlipViewContainer menuLabel="Chief Complaint/HPI" selected="false">
+				<supportclass:flipViews>
+					<chiefcomplaint:ChiefComplaintInputView/>
+					<chiefcomplaint:ChiefComplaintHistoryView/>
+				</supportclass:flipViews>
+			</supportclass:FlipViewContainer>
+			<supportclass:FlipViewContainer menuLabel="Review of System" selected="false">
+				<supportclass:flipViews>
+					<reviewofsystem:ReviewOfSystemInputView moduleName="{Constants.REVIEW_OF_SYSTEM_MODULE_NAME}"/>
+					<reviewofsystem:ReviewOfSystemHistoryView moduleName="{Constants.REVIEW_OF_SYSTEM_MODULE_NAME}" sectionNumber="3"/>
+				</supportclass:flipViews>
+			</supportclass:FlipViewContainer>
+			<supportclass:FlipViewContainer menuLabel="Physical" selected="false">
+				<supportclass:flipViews>
+					<physical:PhysicalsView moduleName="{Constants.PHYSICAL_MODULE_NAME}" width="100%"/>
+					<reviewofsystem:ReviewOfSystemHistoryView moduleName="{Constants.PHYSICAL_MODULE_NAME}" sectionNumber="4"/>
+				</supportclass:flipViews>
+			</supportclass:FlipViewContainer>
+			<supportclass:FlipViewContainer menuLabel="In-House Lab">
+				<supportclass:flipViews>
+					<inhouselab:InHouseLabInputView/>
+					<inhouselab:InHouseLabHistoryView/>
+				</supportclass:flipViews>
+			</supportclass:FlipViewContainer>
+		</supportclass:inputViews>
+	</supportclass:PatientSubViewContainer>
+	
+</s:Group>

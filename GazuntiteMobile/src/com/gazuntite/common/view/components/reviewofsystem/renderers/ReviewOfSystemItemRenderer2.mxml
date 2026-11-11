@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false"
+				height="28" width="140"
+				>
+	<fx:Script>
+		<![CDATA[
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+			}
+		]]>
+	</fx:Script>
+
+	
+	<s:Rect left="0" right="0" top="0" bottom="0" alpha="1">
+		<s:stroke>
+			<s:SolidColorStroke caps="round" color="#545454" joints="miter" miterLimit="3" weight="1"/>
+		</s:stroke>
+		<s:fill>
+			<s:LinearGradient rotation="90">
+				<s:GradientEntry alpha="1" color="#FFFFFF" ratio="0"/>
+				<s:GradientEntry alpha="1.0" color="#D7D7D7" ratio="0.49019607843137253"/>
+				<s:GradientEntry alpha="1.0" color="#BDBBB5" ratio="0.4980392156862745"/>
+				<s:GradientEntry alpha="1.0" color="#D1D1D1" ratio="0.9058823529411765"/>
+				<s:GradientEntry alpha="1.0" color="#FFFFFF" ratio="1"/>
+			</s:LinearGradient>
+		</s:fill>
+	</s:Rect>	
+
+	<s:RichText left="8" right="36" verticalCenter="0" color="#000000" fontFamily="Calibri"
+				fontSize="12" 
+				maxDisplayedLines="1" showTruncationTip="true"
+				text="{data.label}"/>	
+
+		
+	<s:ToggleButton 
+		right="24" verticalCenter="0"
+		skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.NTB1"
+		buttonMode="true" useHandCursor="true" toolTip="Normal"/>
+	<s:ToggleButton 
+		right="4" verticalCenter="0"
+		skinClass="com.gazuntite.common.view.components.reviewofsystem.skin.ATB1"
+		buttonMode="true" useHandCursor="true" toolTip="Abnormal"/>
+
+	<!--	<s:BitmapImage right="2" verticalCenter="-8" smooth="true" 
+				   source="@Embed('/assets/images/Dot.png')"
+				   />
+-->
+</s:ItemRenderer>

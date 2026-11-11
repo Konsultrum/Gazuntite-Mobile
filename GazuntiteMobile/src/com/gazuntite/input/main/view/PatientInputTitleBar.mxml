@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark"
+					  skinClass="com.gazuntite.input.main.view.PatientInputTitleBarSkin"
+					  >
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager;
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfoItem;
+			import com.gazuntite.input.main.viewmodel.PatientInputNavigationInfo;
+			import com.gazuntite.input.main.viewmodel.PatientInputViewModel;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var navModel:PatientInputNavigationInfo = PatientInputViewModel.getInstance().navigationInfo;
+			
+			protected function onCategoryChange(event:IndexChangeEvent):void
+			{
+				var next:NavigationInfoItem = uiMainCategory.selectedItem as NavigationInfoItem;
+				if (next.subNavInfoItemList!=null && next.subNavInfoItemList.length>0)
+				{
+					navModel.jumpToSubItem = next.subNavInfoItemList[0];
+				}
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:HorizontalLayout
+			verticalAlign="middle"
+			paddingLeft="4"
+			/>
+	</s:layout>
+	<s:TabBar id="uiMainCategory" skinClass="com.gazuntite.input.main.skin.NumberTabBarSkin" 
+			  dataProvider="{navModel.navItemList}"
+			  labelField="title"
+			  selectedItem="{navModel.currentTopNavItem}"
+			  change="onCategoryChange(event)"
+			  />
+	<s:Button id="uiOptions"
+			  skinClass="com.gazuntite.input.main.skin.InputOptionButtonSkin"
+			  includeInLayout="false"
+			  x="{this.width/2-uiOptions.width/2}"
+			  y="4"
+			  />
+	<s:Spacer width="100%"/>
+	<s:Button id="uiExpand" 
+					skinClass="com.gazuntite.input.main.skin.ExpandButtonSkin"
+					click="MainLayoutManager.getInstance().maximizePatientInput()"
+					/>
+</s:SkinnableContainer>

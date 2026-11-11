@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:immunization="com.gazuntite.view.patient.component.itemrenderer.immunization.*" 
+				xmlns:components="com.gazuntite.components.*" 
+				autoDrawBackground="false"
+				initialize="init()" width="100%" xmlns:dictation="com.gazuntite.components.dictation.*"
+				>
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.pmh.immunization.ImmunizationDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.controls.extended.components.PopupGroup;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin;
+			import com.gazuntite.skins.controls.container.input.RecordEditPopupSkin;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.event.ImmunizationDeleteEvent;
+			import com.gazuntite.view.patient.input.history.Immunization.PatientInputHistoryImmunizationEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.CursorManager;
+			
+			[Bindable]	public var dto:ImmunizationDTO;
+			[Bindable]	public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			private var popup:PopupGroup;
+			
+			override public function set data(value:Object):void
+			{
+				if (value == null)
+					return;
+				
+				super.data = value;
+				dto = value as ImmunizationDTO;
+				
+				showGlow();
+				invalidateDisplayList();
+			}
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			protected function toggleEditView():void
+			{
+				if (!dto)
+					return;
+				
+				dto.inEditMode = !dto.inEditMode;
+				
+				showGlow();
+			}
+			
+			private function showGlow():void
+			{
+				if (!dto)
+					return;
+				
+				if (dto.inEditMode)
+				{
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+			
+			protected function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				toggleEditView();
+				event.stopImmediatePropagation()
+			}
+			
+			protected function delete_Record(event:MouseEvent):void
+			{
+				if (!dto)
+					return;
+				
+				UtilityFunctions.AskMessage("Do you want to delete selected record", function():void
+				{
+					dto.IsDeleted = true;
+					dto.IsDirty = true;
+					
+					var ev:PatientInputHistoryImmunizationEvent = new PatientInputHistoryImmunizationEvent(
+						PatientInputHistoryImmunizationEvent.PATIENT_INPUT_IMMUNIZATION_DELETE_EVENT, true);
+					ev.immunizationDTO = dto;
+					
+					dispatchEvent(ev);
+				});
+				
+				event.stopPropagation();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number,  unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', itemIndex % 2 ? GeneralListAlternateItemSkin : GeneralListItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			protected function id_btnEdit_clickHandler(event:MouseEvent):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					removeEditPopup();
+					return;
+				}
+				
+				popup 											= new PopupGroup();
+				var editor:ImmunizationItemEditView				= new ImmunizationItemEditView();
+				editor.immDTO 									= dto;
+				editor.width  									= this.width;
+				editor.addEventListener( "saveStatus", function(event:Event):void
+				{
+					removeEditPopup();
+					toggleEditView();
+				});
+				editor.setStyle('skinClass', RecordEditPopupSkin);
+				popup.addElement( editor );
+				popup.ShowPopup( this );
+				
+				if (editor.immDTO != null)// Populate the Form with Selected DTO
+				{
+					if (editor.immDTO.AssociateType == 'This Visit')
+					{
+						editor.id_AssociateVisitzCombo.selectedIndex = 0;
+					}
+						
+					else if (editor.immDTO.AssociateType == 'Previous Visit')
+					{
+						editor.id_AssociateVisitzCombo.selectedIndex = 1;
+						editor.id_VisitDatesCombo.text 		= UtilityFunctions.FormatDate(editor.immDTO.VisitDate, 'MM/DD/YYYY'); 	
+						editor.id_VisitDatesCombo.enabled 	= true;
+					}
+						
+					else if (editor.immDTO.AssociateType == 'N/A')
+					{
+						editor.id_AssociateVisitzCombo.selectedIndex = 2;
+					}
+					
+					editor.id_AssociateVisitzCombo.text = editor.immDTO.AssociateType;
+					editor.img_Associated.source 		= QIConstants.IMG_GREEN;
+					
+					editor.id_ImmunizationCmbo.selectedItem = editor.immDTO.ImmunizationType;
+					editor.id_ImmunizationCmbo.text = editor.immDTO.ImmunizationType.Name;
+					
+					editor.id_DoseCmbo.text = editor.immDTO.Dose;
+					editor.img_Dose.source = QIConstants.IMG_GREEN;
+					
+					editor.id_BodySideRouteCmbo.text = editor.immDTO.Rout;
+					
+					editor.id_DateAdmin.text = editor.immDTO.DateAdmin;
+					
+					editor.id_LotNoCmbo.text	= editor.immDTO.LotNumber;
+					
+					editor.id_ExpiryDate.text = editor.immDTO.ExpiryDate;
+					
+					editor.id_NextDue.text = editor.immDTO.NextDoseDue;
+					
+					editor.id_ManufacturerCmbo.text = editor.immDTO.Manufacturer;
+					
+					editor.id_SiteCmbo.text = editor.immDTO.Site;
+					
+					if (editor.immDTO.RefusalReason != "null")
+					{
+						editor.id_ReasonOfRefusalCmbo.text = editor.immDTO.RefusalReason;
+						editor.id_RefusalChk.selected	= true;
+					}
+					
+					editor.id_SeriesCmbo.text = editor.immDTO.Series;
+					
+					editor.toolTipChanged = true;
+					invalidateProperties();
+				}
+				//	editor.uiReaction.text 						= dto.Reaction;
+				//	editor.id_allergyList.text 					= dto.AllergyName;
+				var pt:Point 									= event.currentTarget.localToGlobal( new Point(event.currentTarget.x, event.currentTarget.y)); 
+				popup.move( 22, (pt.y + event.currentTarget.height)-2 );
+				
+				popup.addEventListener(CloseEvent.CLOSE, function (event:Event):void
+				{
+					id_btnEdit.selected 						= false;
+				});
+				
+				id_btnEdit.selected 							= true;
+				
+				event.stopImmediatePropagation();
+				event.preventDefault();
+				
+				FlexGlobals.topLevelApplication.addEventListener(MouseEvent.CLICK, removeEditPopup);
+			}
+			private function removeEditPopup(event:Event = null):void
+			{
+				if( null != popup && popup.isPopUp )
+				{
+					popup.removePopup();
+					FlexGlobals.topLevelApplication.removeEventListener(MouseEvent.CLICK, removeEditPopup);
+					popup = null;
+					id_btnEdit.selected 			= false;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="26" buttonMode="true" >
+		<s:HGroup left="0" right="76" top="0" bottom="0"
+				  horizontalAlign="left"
+				  verticalAlign="middle"
+				  paddingLeft="8" paddingRight="8" gap="6"
+				  buttonMode="true" toolTip="Open/Close Details"
+				  click="toggleEditView()"
+				  >
+			<s:Label color="#333333" fontFamily="CalibriCFF" fontSize="14" 	 maxDisplayedLines="1"
+					 text="{dto.serialNumber.toString() +'. '+ dto.ImmunizationType.Name}"
+					 toolTip="{dto.ImmunizationType.Name}" width="100%"/>
+		</s:HGroup>
+		
+		<s:HGroup right="5" gap="4" verticalCenter="0" height="100%" verticalAlign="middle" horizontalAlign="right">
+			<s:Image source="@Embed('assets/images/new.png')" buttonMode="false" useHandCursor="false"/>
+			<s:ToggleButton id="id_btnEdit"
+							click="id_btnEdit_clickHandler(event)"
+							buttonMode="true" toolTip="Edit the Record"
+							skinClass="com.gazuntite.skins.controls.toggleButtonSkin.input.EditRecordArrowTBSkin"
+							/>
+			<s:ToggleButton id="uiDictation"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inDictationMode}"	buttonMode="true" toolTip="Record Level Dictation"
+							skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"	/>
+			<s:ToggleButton id="uiNote"
+							click="onDictationNoteButtonsClick(event)"
+							selected="@{viewModel.inNoteMode}"	buttonMode="true" toolTip="Record Level Notes"
+							skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"	/>
+			<s:Button click="delete_Record(event)"
+					  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin" 
+					  buttonMode="true" useHandCursor="true"  toolTip="Delete Immunization"	  />
+		</s:HGroup>
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="21"  visible="{dto.inEditMode}" includeInLayout="{dto.inEditMode}" >
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"  />
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" noteTooltip="{dto.Note}" note="@{dto.Note}"
+											isSaveButtonVisible="false"/>
+		<immunization:ImmunizationItemExpandView immDTO="{dto}"
+												 width="100%"  skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin"/>
+	</s:Group>
+</s:ItemRenderer>

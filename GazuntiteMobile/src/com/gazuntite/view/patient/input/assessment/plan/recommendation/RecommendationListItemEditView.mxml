@@ -1,0 +1,525 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					  xmlns:s="library://ns.adobe.com/flex/spark" 
+					  xmlns:mx="library://ns.adobe.com/flex/mx"
+					  skinClass="com.gazuntite.skins.controls.container.ePrescription.NewRXExpandRendererSkin">
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.diagnosis.DiagnosisDTO;
+			import com.gazuntite.common.dto.assessment.recommendation.RecommendationDTO;
+			import com.gazuntite.common.dto.baseDTO.GeneralTypeDTO;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			
+			import spark.events.IndexChangeEvent;
+			import spark.events.TextOperationEvent;
+			
+			[Bindable]
+			public var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var labelWidth:int = 120;
+			
+			private var _recommendatonDTO:RecommendationDTO;
+			private var toolTipChanged:Boolean;
+			
+			[Bindable]
+			public function get recommendationDTO():RecommendationDTO
+			{
+				return _recommendatonDTO;
+			}
+			
+			public function set recommendationDTO(value:RecommendationDTO):void
+			{
+				_recommendatonDTO = value;
+				
+				if (!recommendationDTO)
+					return;
+				
+				if (recommendationDTO.plantype)
+				{
+					if (recommendationDTO.plantype.ID == 0)
+					{
+						setRequiredIcon(id_PlanTypeCmbo, QIConstants.IMG_RED);
+					}
+					else
+					{
+						id_PlanTypeCmbo.selectedItem = recommendationDTO.plantype;
+						setRequiredIcon(id_PlanTypeCmbo, QIConstants.IMG_GREEN);
+					}
+					
+					id_PlanTypeCmbo.textInput.text = recommendationDTO.plantype.Name;
+				}
+				else
+				{
+					setRequiredIcon(id_PlanTypeCmbo, QIConstants.IMG_RED);
+				}
+				
+				if (recommendationDTO.methodtype)
+				{
+					if (recommendationDTO.methodtype.ID == 0)
+					{
+						setRequiredIcon(id_MethodCmbo, QIConstants.IMG_RED);
+					}
+					else
+					{
+						id_MethodCmbo.selectedItem = recommendationDTO.methodtype;
+						setRequiredIcon(id_MethodCmbo, QIConstants.IMG_GREEN);
+					}
+					
+					id_MethodCmbo.textInput.text = recommendationDTO.methodtype.Name;
+				}
+				else
+				{
+					setRequiredIcon(id_MethodCmbo, QIConstants.IMG_RED);
+				}
+				
+				if (recommendationDTO.Links)
+				{
+					id_WebLinksCmbo.textInput.text = recommendationDTO.Links;
+				}
+				
+				if (recommendationDTO.DurationType)
+				{
+					if (recommendationDTO.DurationType.ID == 0)
+					{
+						setRequiredIcon(id_DurationCmbo, QIConstants.IMG_RED);
+					}
+					else
+					{
+						setRequiredIcon(id_DurationCmbo, QIConstants.IMG_GREEN);
+						id_DurationCmbo.selectedItem = recommendationDTO.DurationType;
+					}
+					
+					id_DurationCmbo.textInput.text = recommendationDTO.DurationType.Name;
+				}
+				else
+				{
+					setRequiredIcon(id_DurationCmbo, QIConstants.IMG_RED);
+				}
+				
+				if (recommendationDTO.Description)
+				{
+					id_Description.text = recommendationDTO.Description;
+				}
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+
+			private function setRequiredIcon(cmbo:ComboBox, icon:Class):void
+			{
+				switch (cmbo.id)
+				{
+					case "id_PlanTypeCmbo":
+						
+						img_PlanType.source = icon;
+						break;
+					
+					case "id_MethodCmbo":
+						
+						img_Method.source = icon;
+						break;
+					
+					case "id_DurationCmbo":
+						
+						img_Duration.source = icon;
+						break;
+					
+					default:
+						break;
+				}
+			}
+			
+			private function webLinksKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.UP || event.keyCode == Keyboard.DOWN)
+					return;
+				
+				var ev:PatientInputAssessmentRecommendationEvent = new PatientInputAssessmentRecommendationEvent(
+							PatientInputAssessmentRecommendationEvent.PATIENT_INPUT_RECOMMENDATION_ITEM_EDIT_KEY_UP_EVENT, true);
+				
+				ev.searchString = id_WebLinksCmbo.textInput.text;
+				
+				dispatchEvent(ev);
+				
+				id_WebLinksCmbo.toolTip = id_WebLinksCmbo.textInput.text;
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function descriptionFocusOutHandler():void
+			{
+				if (id_Description.text.length > 0)
+				{
+					img_Description.source = QIConstants.IMG_GREEN;
+				}
+				else
+				{
+					img_Description.source = QIConstants.IMG_RED;
+				}
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (curTar.selectedIndex < 0)
+				{
+					setRequiredIcon(curTar, QIConstants.IMG_RED);
+				}
+				else
+				{
+					setRequiredIcon(curTar, QIConstants.IMG_GREEN);
+				}
+				
+				if (curTar == id_PlanTypeCmbo || curTar == id_MethodCmbo || curTar == id_DurationCmbo)
+				{
+					if (curTar.selectedIndex >= 0 && curTar.selectedIndex < curTar.dataProvider.length)
+					{
+						var selectedItem:GeneralTypeDTO = curTar.dataProvider[curTar.selectedIndex] as GeneralTypeDTO;
+						curTar.textInput.text = selectedItem.Name;
+					}
+				}
+				else if (curTar == id_WebLinksCmbo)
+				{
+					curTar.textInput.text = curTar.selectedItem;
+				}
+				
+				toolTipChanged = true;
+				invalidateProperties();
+			}
+			
+			private function descriptionChangeHandler(event:TextOperationEvent):void
+			{
+				if (id_Description.text.length > 0)
+				{
+					img_Description.source = QIConstants.IMG_GREEN;
+				}
+				else
+				{
+					img_Description.source = QIConstants.IMG_RED;
+				}
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				if (!recommendationDTO)
+					return;
+				
+				recommendationDTO.plantype = id_PlanTypeCmbo.selectedItem as GeneralTypeDTO;
+				recommendationDTO.methodtype = id_MethodCmbo.selectedItem as GeneralTypeDTO;
+				recommendationDTO.DurationType = id_DurationCmbo.selectedItem as GeneralTypeDTO;
+				
+				var diagnosis:DiagnosisDTO = id_AssociatedDiagnosisCmbo.selectedItem as DiagnosisDTO;
+				
+				if (diagnosis)
+				{
+					var diagnosisType:GeneralTypeDTO = new GeneralTypeDTO();
+					
+					diagnosisType.ID = diagnosis.IcdDto.ID;
+					diagnosisType.Name = diagnosis.IcdDto.IcdCodeDescription;
+				}
+				
+				recommendationDTO.Links = id_WebLinksCmbo.textInput.text;
+				recommendationDTO.Description = id_Description.text;
+				recommendationDTO.IsDiscussedWithPatient = id_DiscussedWithPatient.selected;
+				recommendationDTO.IsDirty = true;
+				
+				recommendationDTO.ModifiedAt = new Date();
+				recommendationDTO.ModifiedBy = model.LoggedInUserId;
+				
+				var ev:PatientInputAssessmentRecommendationEvent = new PatientInputAssessmentRecommendationEvent(
+							PatientInputAssessmentRecommendationEvent.PATIENT_INPUT_RECOMMENDATION_EDIT_EVENT, true);
+				
+				ev.recommedationDTO = recommendationDTO;
+				
+				dispatchEvent(ev);
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotvalid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_Description.text.length <= 0)
+				{
+					if (isPlanTypeInvalid())
+					{
+						isNotvalid = true;
+						
+						errorStr += "Please select Plan Type\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_PlanTypeCmbo;
+					}
+					
+					if (isMethodTypeInvalid())
+					{
+						isNotvalid = true;
+						
+						errorStr += "Please select Method\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_MethodCmbo;
+					}
+					
+					if (isDurationInvalid())
+					{
+						isNotvalid = true;
+						
+						errorStr += "Please select Duration\n";
+						
+						if (!toSetFocus)
+							toSetFocus = id_DurationCmbo;
+					}
+					
+					if (isNotvalid)
+					{
+						errorStr += "\t\tOR\nPlease enter Description\n";
+					}
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.NO, FlexGlobals.topLevelApplication.mainContainer, function ():void
+					{
+						if (toSetFocus)
+							toSetFocus.setFocus();
+					});
+				}
+				
+				return isNotvalid;
+			}
+			
+			private function isPlanTypeInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+			
+				if (id_PlanTypeCmbo.selectedIndex < 0)
+				{
+					if (!id_PlanTypeCmbo.selectedItem)
+					{
+						isNotValid = true;
+					}
+					else
+					{
+						var planType:GeneralTypeDTO = id_PlanTypeCmbo.selectedItem as GeneralTypeDTO;
+						
+						if (!planType)
+							isNotValid = true;
+					}
+				}
+				
+				return isNotValid;
+			}
+			
+			private function isMethodTypeInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_MethodCmbo.selectedIndex < 0)
+				{
+					if (!id_MethodCmbo.selectedItem)
+					{
+						isNotValid = true;
+					}
+					else
+					{
+						var methodType:GeneralTypeDTO = id_MethodCmbo.selectedItem as GeneralTypeDTO;
+						
+						if (!methodType)
+							isNotValid = true;
+					}
+				}
+				
+				return isNotValid;
+			}
+			
+			private function isDurationInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				
+				if (id_DurationCmbo.selectedIndex < 0)
+				{
+					if (!id_DurationCmbo.selectedItem)
+					{
+						isNotValid = true;
+					}
+					else
+					{
+						var duration:GeneralTypeDTO = id_DurationCmbo.selectedItem as GeneralTypeDTO;
+						
+						if (!duration)
+							isNotValid = true;
+					}
+				}
+				
+				return isNotValid;
+			}
+			
+			public function associatedDiagnosisLabel(oItem:Object):String
+			{
+				if (null == model.diagnosisDTOList ||  model.diagnosisDTOList.length < 1)
+					return  "";
+				
+				var label:String = "";
+				
+				if (oItem && oItem.hasOwnProperty("IcdDto") && oItem.IcdDto)
+				{
+					if (oItem.IcdDto.hasOwnProperty("IcdCodeName"))
+					{
+						label += oItem.IcdDto.IcdCodeName + ", ";
+					}
+					
+					if (oItem.IcdDto.hasOwnProperty("IcdCodeDescription"))
+					{
+						label += oItem.IcdDto.IcdCodeDescription;
+					}
+					
+					label += oItem.IsChronic ? " (Chronic) " : " (Acute) ";
+				}
+				
+				return label;
+			}
+			
+			override protected function commitProperties():void
+			{
+				super.commitProperties();
+				
+				if (toolTipChanged)
+				{
+					toolTipChanged = false;
+					
+					if (id_PlanTypeCmbo.textInput.text.length)
+					{
+						id_PlanTypeCmbo.toolTip = id_PlanTypeCmbo.textInput.text;
+					}
+					else
+					{
+						id_PlanTypeCmbo.toolTip = "Plan Type";
+					}
+					
+					if (id_MethodCmbo.textInput.text.length)
+					{
+						id_MethodCmbo.toolTip = id_MethodCmbo.textInput.text;
+					}
+					else
+					{
+						id_MethodCmbo.toolTip = "Method";
+					}
+					
+					if (id_DurationCmbo.textInput.text.length)
+					{
+						id_DurationCmbo.toolTip = id_DurationCmbo.textInput.text;
+					}
+					else
+					{
+						id_DurationCmbo.toolTip = "Duration";
+					}
+					
+					if (id_WebLinksCmbo.textInput.text.length)
+					{
+						id_WebLinksCmbo.toolTip = id_WebLinksCmbo.textInput.text;
+					}
+					else
+					{
+						id_WebLinksCmbo.toolTip = "Web Links";
+					}
+				}
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout paddingLeft="8" paddingRight="8" paddingTop="8" paddingBottom="8"/>
+	</s:layout>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_PlanType"/>
+			<s:Label text="Plan Type:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_PlanTypeCmbo" prompt="Select Plan Type" toolTip="Plan Type" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.recommendationPlanTypeDTOList}" labelField="Name"
+						change="comboChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Associated Diagnosis:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_AssociatedDiagnosisCmbo" prompt="Select Associated Diagnosis" toolTip="Associated Diagnosis" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.diagnosisDTOList}" labelFunction="associatedDiagnosisLabel"
+						change="comboChangeHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_Method"/>
+			<s:Label text="Method:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_MethodCmbo" prompt="Select Method" toolTip="Method" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.recommendationMethodTypeDTOList}" labelField="Name"
+						change="comboChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Web Links:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_WebLinksCmbo" prompt="Enter Web Links" toolTip="Web Links" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						selectedItem="{recommendationDTO.Links}"
+						dataProvider="{model.recommendationLinkAutoCompleteDTOList}" labelField="label"
+						keyUp="webLinksKeyUpHandler(event)"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_Duration"/>
+			<s:Label text="Duration:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:ComboBox id="id_DurationCmbo" prompt="Select Duration" toolTip="Duration" width="100%"
+						skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin" fontFamily="CalibriCFF"
+						dataProvider="{model.recommendationDurationTypeDTOList}" labelField="Name"
+						change="comboChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:Spacer width="11"/>
+			<s:Label text="Discussed With Patient:" width="125" styleName="patientFormLabel"/>
+			<s:ToggleButton id="id_DiscussedWithPatient" buttonMode="true"
+							skinClass="com.gazuntite.view.patient.component.YesNoToggleButtonSkin"
+							toolTip="{id_DiscussedWithPatient.selected ? 'Yes' : 'No'}"/>
+		</s:HGroup>
+	</s:HGroup>
+	
+	<s:HGroup width="100%">
+		<s:HGroup width="100%" verticalAlign="middle" height="21">
+			<s:BitmapImage id="img_Description" source="{(id_Description.text.length > 0)? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+			<s:Label text="Description:" width="{labelWidth}" styleName="patientFormLabel"/>
+			<s:TextInput id="id_Description" prompt="Enter Description" toolTip="{(id_Description.text.length > 0)? id_Description.text : 'Description'}" 
+						 width="100%" height="21"
+						 skinClass="com.gazuntite.skins.IPEControls.IPETextInputSkin" fontSize="14" fontFamily="CalibriCFF"
+						 text="{recommendationDTO.Description}"
+						 change="descriptionChangeHandler(event)"/>
+		</s:HGroup>
+		
+		<s:HGroup width="100%" height="100%" verticalAlign="bottom" horizontalAlign="right">
+			<s:Button id="id_Save" buttonMode="true" toolTip="Save" skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+					  click="saveClickHandler()"/>
+		</s:HGroup>
+	</s:HGroup>
+</s:SkinnableContainer>

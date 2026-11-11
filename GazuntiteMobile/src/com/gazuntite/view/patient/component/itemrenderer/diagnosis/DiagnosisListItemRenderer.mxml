@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				xmlns:components="com.gazuntite.components.*" 
+				autoDrawBackground="false"
+				width="100%"
+				initialize="init()" xmlns:dictation="com.gazuntite.components.dictation.*" xmlns:diagnosis="com.gazuntite.view.patient.component.itemrenderer.diagnosis.*"
+				>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.diagnosis.DiagnosisDTO;
+			import com.gazuntite.components.dictation.PatientDictationNoteViewEvent;
+			import com.gazuntite.skins.controls.list.GeneralListAlternateItemSkin;
+			import com.gazuntite.skins.controls.list.GeneralListItemSkin;
+			import com.gazuntite.utils.UtilityFunctions;
+			import com.gazuntite.view.patient.input.assessment.diagnosis.PatientInputAssessmentDiagnosisEvent;
+			import com.gazuntite.viewModel.PatientDictationNoteViewModel;
+			
+			import flash.net.dns.AAAARecord;
+			
+			[Bindable]	
+			public var viewModel:PatientDictationNoteViewModel = new PatientDictationNoteViewModel();
+			
+			[Bindable]
+			private var diagnosisDTO:DiagnosisDTO;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				diagnosisDTO = data as DiagnosisDTO;
+				
+				/**
+				 * Everytime the data is assigned to the renderer, 
+				 * its notes and dictation buttons mode should be reset either in seleced on deselected state
+				 * */
+				setDictationNoteButtonMode();
+				
+				invalidateDisplayList();
+			}
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void 
+			{
+				id_Header.setStyle('skinClass', diagnosisDTO.serialNumber % 2 ? GeneralListItemSkin: GeneralListAlternateItemSkin);
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			private function init():void
+			{
+				viewModel.inlineEditing = true;
+			}
+			
+			private function toggleEditView():void
+			{
+				if (!diagnosisDTO)
+					return;
+				
+				diagnosisDTO.inEditMode = !diagnosisDTO.inEditMode;
+				
+				gp.visible = diagnosisDTO.inEditMode;
+				gp.includeInLayout = diagnosisDTO.inEditMode;
+				
+				if (!diagnosisDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function setDictationNoteButtonMode():void
+			{
+				if (!diagnosisDTO.inEditMode)
+				{
+					if (viewModel.inDictationMode)
+						viewModel.inDictationMode = false;
+					
+					if (viewModel.inNoteMode)
+						viewModel.inNoteMode = false;
+				}
+				
+				showGlow();
+			}
+			
+			private function onDictationNoteButtonsClick(event:MouseEvent):void
+			{
+				if (!diagnosisDTO.inEditMode)
+					toggleEditView();
+				
+				event.stopPropagation();
+			}
+			
+			private function deleteClickHandler(event:MouseEvent):void
+			{
+				if (!diagnosisDTO)
+					return;
+				
+				UtilityFunctions.AskMessage("Do you want to delete selected record", function():void
+				{
+					diagnosisDTO.IsDirty = true;
+					diagnosisDTO.IsDeleted = true;
+					
+					var ev:PatientInputAssessmentDiagnosisEvent = new PatientInputAssessmentDiagnosisEvent(
+								PatientInputAssessmentDiagnosisEvent.PATIENT_INPUT_DIAGNOSIS_DELETE_EVENT, true);
+					
+					ev.diagnosisDTO = diagnosisDTO;
+					
+					dispatchEvent(ev);
+				});
+				
+				event.stopPropagation();
+			}
+			
+			private function showGlow():void
+			{
+				if (diagnosisDTO.inEditMode)
+				{
+					
+					glow1.alpha = 1;
+					glowAnimation.play();
+				}
+				else
+				{
+					glowAnimation.play(null, true);
+					glow1.alpha = 0;
+				}
+			}
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<s:Animate id="glowAnimation" target="{glow1}" duration="250" >
+			<s:motionPaths>
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurX"  />
+				<s:SimpleMotionPath valueFrom="0" valueTo="10" property="blurY"/>
+			</s:motionPaths>
+		</s:Animate>
+	</fx:Declarations>
+	
+	<s:filters>
+		<s:GlowFilter id="glow1" blurX="0" blurY="0" alpha="0" color="#EA8033" strength="4" inner="true"/>
+	</s:filters>
+	
+	<s:SkinnableContainer id="id_Header" width="100%" height="35" 
+						  buttonMode="true" toolTip="Open/Close Details" click="toggleEditView()">
+		<s:Label left="5" right="110" color="#333333" fontFamily="CalibriCFF" fontSize="14" maxDisplayedLines="1"
+				 text="{diagnosisDTO.serialNumber.toString() +'. '+ diagnosisDTO.IcdDto.IcdCodeDescription}"
+				 toolTip="{diagnosisDTO.IcdDto.IcdCodeDescription}" verticalCenter="0"/>
+		
+		<s:Image right="76" top="10" buttonMode="true" source="@Embed('assets/images/new.png')"
+				 useHandCursor="true"/>
+		
+		<s:ToggleButton id="uiDictation"
+						right="53" top="8" click="onDictationNoteButtonsClick(event)"
+						selected="@{viewModel.inDictationMode}"	buttonMode="true" toolTip="Record Level Dictation"
+						skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"/>
+		<s:ToggleButton id="uiNote"
+						right="28" top="8" click="onDictationNoteButtonsClick(event)"
+						selected="@{viewModel.inNoteMode}" buttonMode="true" toolTip="Record Level Notes"
+						skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"/>
+		<s:Button right="4" top="8"
+				  skinClass="com.gazuntite.skins.controls.button.input.RecycleButtonSkin" 
+				  buttonMode="true" useHandCursor="true" toolTip="Delete Diagnosis"
+				  click="deleteClickHandler(event)"/>
+	</s:SkinnableContainer>
+	
+	<s:Group id="gp" width="{id_Header.width - 5}" top="30"  visible="{diagnosisDTO.inEditMode}" includeInLayout="{diagnosisDTO.inEditMode}">
+		<s:layout>
+			<s:VerticalLayout gap="-4" paddingBottom="3" paddingLeft="10" paddingRight="3" paddingTop="4"  />
+		</s:layout>
+		<dictation:PatientDictationNoteView width="100%" minHeight="47" viewModel="{viewModel}" noteTooltip="{diagnosisDTO.Note}" note="@{diagnosisDTO.Note}"
+											 isSaveButtonVisible="false"/>
+		<diagnosis:DiagnosisItemEditView width="100%" diagnosisDTO="{diagnosisDTO}"/>
+	</s:Group>
+</s:ItemRenderer>

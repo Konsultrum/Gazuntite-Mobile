@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:View xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		xmlns:s="library://ns.adobe.com/flex/spark"
+		actionBarVisible="false" title="Items"
+		>
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfo;
+			import com.gazuntite.common.viewmodel.navigation.NavigationInfoItem;
+			
+			import spark.components.Callout;
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var navItem:NavigationInfoItem;
+			public override function set data(value:Object):void
+			{
+				super.data = value;
+				navItem = value as NavigationInfoItem;
+			}
+			protected function onSubItemChange(event:IndexChangeEvent):void
+			{
+				var navModel:NavigationInfo = navigator.context as NavigationInfo;
+				
+				navModel.jumpToSubItem = uiSubItemList.selectedItem as NavigationInfoItem;
+				
+				(navigator.parentDocument as Callout).close();
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:layout>
+		<s:BasicLayout/>
+	</s:layout>
+	<s:List id="uiSubItemList" alternatingItemColors="[0xf0f0f0]" contentBackgroundColor="#f0f0f0"
+			width="100%" height="100%"
+			dataProvider="{navItem.subNavInfoItemList}"
+			selectedItem="{(navigator.context as NavigationInfo).currentSubNavItem}"
+			change="onSubItemChange(event)"
+			labelField="title"
+			/>
+</s:View>

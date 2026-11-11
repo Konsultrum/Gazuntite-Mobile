@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:SkinnableContainer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		 xmlns:s="library://ns.adobe.com/flex/spark" 
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="cc(event)" xmlns:components="com.gazuntite.components.*" xmlns:dictation="com.gazuntite.components.dictation.*">
+	<fx:Script>
+		<![CDATA[
+			import com.gazuntite.common.dto.assessment.procedure.ProcedureDTO;
+			import com.gazuntite.common.dto.typeDTO.CPTMedicalTypeDTO;
+			import com.gazuntite.patient.visit.model.QIModelLocator;
+			import com.gazuntite.patient.visit.utils.QIConstants;
+			import com.gazuntite.patient.visit.view.pmh.alergies.AlergiesPanel;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			
+			import spark.events.IndexChangeEvent;
+			
+			[Bindable]
+			private var model:QIModelLocator = QIModelLocator.getInstance();
+			
+			[Bindable]
+			private var viewModel:PatientInputAssessmentProcedureViewModel = PatientInputAssessmentProcedureViewModel.getInstance();
+			
+			protected function cc(event:FlexEvent):void
+			{
+				addEventListener(PatientInputAssessmentProcedureEvent.PATIENT_INPUT_PROCEDURE_EDIT_EVENT, 
+							manageProcedureHandler, false, 0, true);
+				addEventListener(PatientInputAssessmentProcedureEvent.PATIENT_INPUT_PROCEDURE_DELETE_EVENT, 
+							manageProcedureHandler, false, 0, true);
+				
+			}
+			
+			private function manageProcedureHandler(event:PatientInputAssessmentProcedureEvent):void
+			{
+				viewModel.managePatientProcedure(QIConstants.INPUT_VIEW);
+			}
+			
+			private function comboKeyUpHandler(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER || event.keyCode == Keyboard.UP || event.keyCode == Keyboard.DOWN)
+					return;
+				
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				var ev:PatientInputAssessmentProcedureEvent = new PatientInputAssessmentProcedureEvent(
+							PatientInputAssessmentProcedureEvent.PATIENT_INPUT_PROCEDURE_ITEM_KEY_UP_EVENT, true);
+				
+				ev.searchString = curTar.textInput.text;
+				
+				if (curTar.id == "id_cptCode")
+				{
+					ev.searchType = PatientInputAssessmentProcedureViewModel.PROCEDURE_CODE;
+				}
+				else
+				{
+					ev.searchType = PatientInputAssessmentProcedureViewModel.PROCEDURE_NAME;
+				}
+				
+				dispatchEvent(ev);
+			}
+			
+			private function comboChangeHandler(event:IndexChangeEvent):void
+			{
+				var curTar:ComboBox = event.currentTarget as ComboBox;
+				
+				if (!curTar)
+					return;
+				
+				if (curTar.id == "id_cptCode")
+				{
+					id_procedure.selectedIndex = curTar.selectedIndex;
+				}
+				else
+				{
+					id_cptCode.selectedIndex = curTar.selectedIndex;
+				}
+				
+				if (curTar.selectedIndex < 0)
+				{
+					id_cptCode.textInput.text = "";
+					id_procedure.textInput.text = "";
+				}
+			}
+			
+			private function saveClickHandler():void
+			{
+				if (isInvalid())
+					return;
+				
+				var procedureDTO:ProcedureDTO = new ProcedureDTO();
+				procedureDTO.cptmedicalDTO = id_cptCode.selectedItem as CPTMedicalTypeDTO;
+				
+				procedureDTO.CreatedAt = new Date();
+				procedureDTO.CreatedBy = model.LoggedInUserId;
+				
+				procedureDTO.ModifiedAt = new Date();
+				procedureDTO.ModifiedBy = model.LoggedInUserId;
+				
+				procedureDTO.VisitDate = model.VisitDate;
+				procedureDTO.VisitID = model.VisitID;
+				
+				procedureDTO.PatientID = model.patientDTO.ID;
+				
+				procedureDTO.IsRecordEditable = true;
+				procedureDTO.IsDirty = true;
+				
+				procedureDTO.Note = dictationNoteView.note;
+				procedureDTO.DictationID = QIConstants.GUID_FORMAT;
+				
+				/* var ev:PatientInputAssessmentProcedureEvent = new PatientInputAssessmentProcedureEvent(
+							PatientInputAssessmentProcedureEvent.PATIENT_INPUT_PROCEDURE_ADD_EVENT, true);
+				
+				ev.procedureDTO = procedureDTO;
+				
+				dispatchEvent(ev); */
+				
+				if (!model.procedureDTOList)
+					model.procedureDTOList = new ArrayCollection();
+				
+				model.procedureDTOList.addItem(procedureDTO);
+				
+				procedureDTO.serialNumber = model.procedureDTOList.length;
+				
+				viewModel.managePatientProcedure(QIConstants.INPUT_VIEW);
+				
+				clearForm();
+			}
+			
+			private function isInvalid():Boolean
+			{
+				var isNotValid:Boolean = false;
+				var errorStr:String = "";
+				var toSetFocus:Object;
+				
+				if (id_cptCode.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select CPT Code\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_cptCode;
+				}
+				
+				if (id_procedure.selectedIndex < 0)
+				{
+					isNotValid = true;
+					
+					errorStr += "Please select Procedure\n";
+					
+					if (!toSetFocus)
+						toSetFocus = id_procedure;
+				}
+				
+				if (errorStr.length > 0)
+				{
+					Alert.show(errorStr, "Required Field", Alert.OK, FlexGlobals.topLevelApplication.mainContainer, function():void
+					{
+							if (toSetFocus)
+								toSetFocus.setFocus();
+								
+					});
+				}
+				
+				return isNotValid;
+			}
+			
+			private function clearForm():void
+			{
+				id_cptCode.selectedIndex = -1;
+				id_cptCode.textInput.text = "";
+				
+				id_procedure.selectedIndex = -1;
+				id_procedure.textInput.text = "";
+				
+				dictationNoteView.note = "";
+				
+				viewModel.inlineDictationNoteViewModel.inDictationMode = false;
+				viewModel.inlineDictationNoteViewModel.inNoteMode = false;
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:layout>
+		<s:VerticalLayout gap="0" paddingTop="10" paddingLeft="5" paddingRight="5" paddingBottom="5"/>
+	</s:layout>
+	
+	<s:Scroller width="100%" height="100%" 
+				horizontalScrollPolicy="off" verticalScrollPolicy="auto" skinClass="com.gazuntite.skins.controls.list.InvisibleScrollerSkin">
+		<s:Group width="100%" height="100%">
+			<s:layout>
+				<s:VerticalLayout gap="0" />
+			</s:layout>
+			
+	<s:HGroup width="100%" height="21" verticalAlign="middle">
+		<s:BitmapImage id="img_CPTCode" source="{(id_cptCode.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+		<s:Label width="20%" text="CPT Code:" styleName="patientFormLabel"/>
+		<s:ComboBox id="id_cptCode" width="240" prompt="Select CPT Code" toolTip="CPT Code"
+					skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+					dataProvider="{model.CptMedicalTypeDTOList}" labelField="ProcedureCode"
+					keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"
+					/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" height="21" verticalAlign="middle">
+		<s:BitmapImage id="img_Procedure" source="{(id_procedure.selectedIndex >= 0) ? QIConstants.IMG_GREEN : QIConstants.IMG_RED}"/>
+		<s:Label width="20%" text="Procedure:" styleName="patientFormLabel"/>
+		<s:ComboBox id="id_procedure" width="240" prompt="Select Procedure" toolTip="Procedure"
+					skinClass="com.gazuntite.skins.IPEControls.IPEComboboxSkin"
+					dataProvider="{model.CptMedicalTypeDTOList}" labelField="ProcedureDescription"
+					keyUp="comboKeyUpHandler(event)" change="comboChangeHandler(event)"
+					/>
+	</s:HGroup>
+	
+	<s:HGroup width="100%" verticalAlign="bottom" horizontalAlign="right">
+		<s:ToggleButton 
+			id="dictation" depth="3"
+			buttonMode="true" toolTip="Dictation"
+			skinClass="com.gazuntite.skins.controls.button.input.DictationButtonSkin"
+			selected="@{viewModel.inlineDictationNoteViewModel.inDictationMode}"/>
+		<s:ToggleButton 
+			id="note" depth="3"
+			buttonMode="true" toolTip="Note"
+			skinClass="com.gazuntite.skins.controls.button.input.WriteNoteButtonSkin"
+			selected="@{viewModel.inlineDictationNoteViewModel.inNoteMode}"/>
+		
+		<s:Button id="save" 
+				  toolTip="Save" 
+				  buttonMode="true" useHandCursor="true"
+				  skinClass="com.gazuntite.skins.controls.button.SaveButtonSkin"
+				  click="saveClickHandler()"/>
+		<s:Button id="next"  
+				  buttonMode="true" useHandCursor="true"
+				  toolTip="Next" skinClass="com.gazuntite.skins.controls.button.NextButtonSkin"/>
+		
+	</s:HGroup>
+	
+	<dictation:PatientDictationNoteView id="dictationNoteView" width="100%" viewModel="{viewModel.inlineDictationNoteViewModel}"
+										 isSaveButtonVisible="false"/>
+			
+	<s:Spacer height="5" />
+	
+	<s:SkinnableContainer width="100%" height="27" skinClass="com.gazuntite.skins.PatientSortBarSkin">
+		<s:layout>
+			<s:HorizontalLayout verticalAlign="middle" paddingLeft="20" paddingRight="10" gap="8"/>
+		</s:layout>
+		
+		<s:Label text="Arrange By:" styleName="emailInboxToolbarTitle"/>
+		
+		<s:DropDownList skinClass="com.gazuntite.skins.controls.list.PatientSortBarDropListSkin" 
+						selectedIndex="0"
+						buttonMode="true" toolTip="Sort List">
+			<s:dataProvider>
+				<s:ArrayCollection>
+					<fx:Object label="Recently Added" />
+					<fx:Object label="Procedure" />
+				</s:ArrayCollection>
+			</s:dataProvider>
+		</s:DropDownList>
+		<s:Spacer width="100%"/>
+	</s:SkinnableContainer>
+	
+	<s:List id="uiprocedureList"
+			width="100%" minHeight="50" allowMultipleSelection="false"
+			skinClass="com.gazuntite.skins.controls.list.PatientInputListSkin"
+			borderVisible="false"
+			dataProvider="{model.procedureDTOList}"
+			itemRenderer="com.gazuntite.view.patient.input.assessment.itemRenderer.ProcedureListIR"
+			/>
+			
+			</s:Group>
+		</s:Scroller>
+</s:SkinnableContainer>

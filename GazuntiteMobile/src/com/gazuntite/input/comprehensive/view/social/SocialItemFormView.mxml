@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009" 
+		  xmlns:s="library://ns.adobe.com/flex/spark" 
+		  xmlns:mx="library://ns.adobe.com/flex/mx" 
+		  xmlns:components="com.gazuntite.controls.extended.components.*" xmlns:component="com.gazuntite.common.view.component.*"
+		  
+		  >
+	<s:ToggleSwitch id="id_pastPresent" 
+					skinClass="com.gazuntite.common.view.skin.ToggleSwitchPresentPastSkin"
+					/>
+	
+	<s:HGroup verticalAlign="top" width="100%"  >
+		
+		<s:VGroup width="60" horizontalAlign="left" verticalAlign="top" >
+			<s:Group width="100%" height="{id_Onset.height}">
+				<s:Label text="OnSet:" styleName="patientFormLabel" verticalCenter="0" width="100%" />
+			</s:Group>
+			<s:Group width="100%" height="{id_AmountCmbo.height}">
+				<s:Label text="Amount:" styleName="patientFormLabel" verticalCenter="0" width="100%" />
+			</s:Group>
+			<s:Group width="100%" height="{id_TypeCmbo.height}">
+				<s:Label text="Type" styleName="patientFormLabel" verticalCenter="0" width="100%" />
+			</s:Group>
+		</s:VGroup>
+		
+		<s:VGroup width="50%" horizontalAlign="left" verticalAlign="top" >
+			<component:DateInput id="id_Onset" 
+									   prompt="Onset" width="100%"
+									   />
+			<s:ComboBox id="id_AmountCmbo" 
+						width="100%"  height="21" prompt="Amount" 
+						labelField="Name" 
+						/>	
+			<s:ComboBox id="id_TypeCmbo"
+						width="100%"  height="21" prompt="Type" 
+						labelField="Name" 
+						/>
+		</s:VGroup>
+		
+		<s:VGroup width="70" horizontalAlign="left" verticalAlign="top" >
+			<s:Group width="100%" height="{id_EndDate.height}">
+				<s:Label text="End Date:" styleName="patientFormLabel" verticalCenter="0" width="100%" visible="{ ! id_pastPresent.selected}" />
+			</s:Group>
+			<s:Group width="100%" height="{id_educated.height}">
+				<s:Label text="Educated:" styleName="patientFormLabel" verticalCenter="0" width="100%" />
+			</s:Group>
+		</s:VGroup>
+		
+		<s:VGroup width="50%" horizontalAlign="left" verticalAlign="top" >
+			<component:DateInput id="id_EndDate" 
+									   visible="{ ! id_pastPresent.selected}"
+									   width="100%"
+									   />
+			<s:ToggleSwitch id="id_educated"
+							skinClass="com.gazuntite.common.view.skin.ToggleSwitchYesNoSkin"
+							/>
+		</s:VGroup>
+	</s:HGroup>	
+</s:VGroup>

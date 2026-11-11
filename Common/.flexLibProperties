@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<flexLibProperties includeAllClasses="true" useMultiPlatformConfig="true" version="3">
+  <includeClasses>
+    <classEntry path="com.gazuntite.common.view.navigation.NavigationBackButton"/>
+    <classEntry path="com.gazuntite.common.viewmodel.navigation.ViewFactory"/>
+    <classEntry path="com.gazuntite.common.view.navigation.NavigationNextButton"/>
+    <classEntry path="com.gazuntite.common.view.component.searchInputSupportClasses.SearchInputDropdown"/>
+    <classEntry path="com.gazuntite.common.view.component.SortBar"/>
+    <classEntry path="com.gazuntite.common.view.component.sortBarSupportClasses.SortBarSkin"/>
+    <classEntry path="com.gazuntite.common.view.component.DateInput"/>
+    <classEntry path="com.gazuntite.common.viewmodel.mainlayout.MainLayoutManager"/>
+    <classEntry path="com.gazuntite.common.viewmodel.mainlayout.MainLayoutState"/>
+    <classEntry path="assets.skin.ToggleButtonSkin"/>
+    <classEntry path="com.gazuntite.common.viewmodel.mainlayout.MainLayoutAnimationHelper"/>
+    <classEntry path="com.gazuntite.common.utils.UtilityFunctions"/>
+    <classEntry path="com.gazuntite.common.logo.LogoAsset"/>
+    <classEntry path="com.gazuntite.common.view.navigation.NavigationQuickAccessImage"/>
+  </includeClasses>
+  <includeResources/>
+  <namespaceManifests/>
+</flexLibProperties>
